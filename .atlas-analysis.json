@@ -1,0 +1,146 @@
+{
+  "projectType": "saas",
+  "projectName": "Plausible Analytics",
+  "projectDescription": "Privacy-friendly, open-source web analytics alternative to Google Analytics",
+  "theme": "almond",
+  "primaryColor": "#5850EC",
+  "lightColor": "#909CF7",
+  "darkColor": "#4B38D8",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/dashboard",
+              "features/goals-conversions",
+              "features/funnels",
+              "features/segments",
+              "features/privacy",
+              "features/realtime",
+              "features/reports"
+            ]
+          },
+          {
+            "group": "Integration",
+            "pages": [
+              "integration/tracker-script",
+              "integration/events-api",
+              "integration/custom-events",
+              "integration/custom-properties",
+              "integration/google-search-console",
+              "integration/frameworks"
+            ]
+          },
+          {
+            "group": "Self-Hosting",
+            "pages": [
+              "self-hosting/overview",
+              "self-hosting/installation",
+              "self-hosting/configuration",
+              "self-hosting/upgrade",
+              "self-hosting/maintenance"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/teams",
+              "advanced/shields",
+              "advanced/shared-links",
+              "advanced/email-reports",
+              "advanced/imports-exports"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview",
+              "api/authentication"
+            ]
+          },
+          {
+            "group": "Stats API",
+            "pages": [
+              "api/stats/aggregate",
+              "api/stats/breakdown",
+              "api/stats/timeseries",
+              "api/stats/realtime"
+            ]
+          },
+          {
+            "group": "Sites API",
+            "pages": [
+              "api/sites/create",
+              "api/sites/get",
+              "api/sites/update",
+              "api/sites/delete"
+            ]
+          },
+          {
+            "group": "Events API",
+            "pages": [
+              "api/events/ingestion",
+              "api/events/custom-events"
+            ]
+          },
+          {
+            "group": "Goals API",
+            "pages": [
+              "api/goals/create",
+              "api/goals/list",
+              "api/goals/delete"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Privacy-focused web analytics without cookies",
+    "Lightweight tracking script (<1KB)",
+    "Real-time dashboard and visitor tracking",
+    "Custom goals and conversion tracking",
+    "Funnel analysis for conversion optimization",
+    "Segments for filtering and analyzing data",
+    "Google Search Console integration",
+    "Team collaboration and shared links",
+    "Email and Slack reports",
+    "Self-hosted Community Edition available",
+    "GDPR, CCPA, and PECR compliant",
+    "Stats API for programmatic access"
+  ],
+  "publicApiSurface": [
+    "GET /api/v1/stats/aggregate",
+    "GET /api/v1/stats/breakdown",
+    "GET /api/v1/stats/timeseries",
+    "GET /api/v1/stats/realtime/visitors",
+    "POST /api/v1/sites",
+    "GET /api/v1/sites/{site_id}",
+    "PUT /api/v1/sites/{site_id}",
+    "DELETE /api/v1/sites/{site_id}",
+    "POST /api/event",
+    "POST /api/v1/sites/goals",
+    "GET /api/v1/sites/goals",
+    "DELETE /api/v1/sites/goals/{goal_id}",
+    "plausible() - JavaScript tracker",
+    "plausible.init() - Tracker configuration",
+    "plausible.trackEvent() - Custom event tracking",
+    "plausible.trackPageview() - Pageview tracking"
+  ]
+}
