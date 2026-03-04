@@ -1,0 +1,557 @@
+---
+title: Configuration Reference
+description: Complete guide to configuring Plausible Analytics Community Edition with environment variables
+---
+
+## Configuration Overview
+
+Plausible CE is configured through environment variables set in the `plausible-conf.env` file. Configuration can also be loaded from files in `/run/secrets` for Docker Swarm secrets support.
+
+<Note>
+  All environment variables can optionally be read from files in the directory specified by `CONFIG_DIR` (defaults to `/run/secrets`).
+</Note>
+
+## Required Configuration
+
+These settings **must** be configured for Plausible to start:
+
+### BASE_URL
+
+The base URL where Plausible is accessible.
+
+```bash
+BASE_URL=https://analytics.yourdomain.com
+```
+
+<Warning>
+  Must start with `http://` or `https://`. Include the port if non-standard (e.g., `http://localhost:8000`).
+</Warning>
+
+### SECRET_KEY_BASE
+
+Secret key for encrypting session data and other sensitive information.
+
+```bash
+SECRET_KEY_BASE=your-64-character-secret-key-here
+```
+
+<Steps>
+  <Step title="Generate the key">
+    ```bash
+    openssl rand -base64 64
+    ```
+  </Step>
+  
+  <Step title="Add to config">
+    Copy the generated string to `plausible-conf.env`
+  </Step>
+  
+  <Step title="Keep secure">
+    Never commit this value to version control or share publicly
+  </Step>
+</Steps>
+
+<Warning>
+  Must be at least 32 bytes long. Changing this value will invalidate all existing sessions.
+</Warning>
+
+## Database Configuration
+
+### PostgreSQL
+
+<CodeGroup>
+```bash Standard URL
+DATABASE_URL=postgres://username:password@hostname:5432/plausible_db
+```
+
+```bash With SSL (Require)
+DATABASE_URL=postgres://username:password@hostname:5432/plausible_db?sslmode=require
+```
+
+```bash With SSL (Verify CA)
+DATABASE_URL=postgres://username:password@hostname:5432/plausible_db?sslmode=verify-ca
+```
+
+```bash With SSL (Verify Full)
+DATABASE_URL=postgres://username:password@hostname:5432/plausible_db?sslmode=verify-full&sslrootcert=/path/to/ca.crt
+```
+
+```bash Unix Socket
+DATABASE_URL=postgresql:///plausible_db?host=/var/run/postgresql
+```
+</CodeGroup>
+
+#### SSL Certificate
+
+```bash
+DATABASE_CACERTFILE=/path/to/ca-certificate.crt
+```
+
+<Note>
+  Setting `DATABASE_CACERTFILE` automatically enables TLS for PostgreSQL connections.
+</Note>
+
+### ClickHouse
+
+```bash
+CLICKHOUSE_DATABASE_URL=http://plausible_events_db:8123/plausible_events_db
+```
+
+#### ClickHouse Performance Settings
+
+```bash
+# Flush interval for batched inserts (milliseconds)
+CLICKHOUSE_FLUSH_INTERVAL_MS=5000
+
+# Maximum buffer size before forcing flush (bytes)
+CLICKHOUSE_MAX_BUFFER_SIZE_BYTES=100000
+
+# Connection pool size for ingestion
+CLICKHOUSE_INGEST_POOL_SIZE=5
+
+# Default storage policy
+CLICKHOUSE_DEFAULT_STORAGE_POLICY=default
+```
+
+<Accordion title="ClickHouse SSL Configuration">
+  ```bash
+  # Path to CA certificate for ClickHouse TLS
+  CLICKHOUSE_CACERTFILE=/path/to/clickhouse-ca.crt
+  ```
+</Accordion>
+
+## Server Configuration
+
+### Network Settings
+
+```bash
+# IP address to bind to (0.0.0.0 for all interfaces)
+LISTEN_IP=127.0.0.1
+
+# HTTP port
+HTTP_PORT=8000
+PORT=8000  # Alternative to HTTP_PORT
+
+# HTTPS port (enables automatic TLS)
+HTTPS_PORT=443
+```
+
+<Info>
+  Setting `HTTPS_PORT` in Community Edition enables automatic TLS certificate management via Let's Encrypt.
+</Info>
+
+### WebSocket URL
+
+```bash
+# Optional: Custom WebSocket URL for real-time updates
+WEBSOCKET_URL=wss://analytics.yourdomain.com/socket
+```
+
+<Warning>
+  WebSocket host must match or be a subdomain of `BASE_URL` host.
+</Warning>
+
+### Cookie Security
+
+```bash
+# Set secure flag on cookies (auto-detected from BASE_URL scheme)
+SECURE_COOKIE=true  # Use true for HTTPS, false for HTTP
+```
+
+## Email Configuration
+
+Plausible sends emails for reports, notifications, and user invitations.
+
+### Mailer Adapter
+
+```bash
+# Default mailer (Bamboo.Mua - direct SMTP)
+MAILER_ADAPTER=Bamboo.Mua
+```
+
+<Tabs>
+  <Tab title="Bamboo.Mua (Default)">
+    Direct SMTP without relay (recommended for CE):
+    
+    ```bash
+    MAILER_ADAPTER=Bamboo.Mua
+    MAILER_EMAIL=plausible@yourdomain.com
+    MAILER_NAME=Plausible Analytics
+    
+    # Optional: Use SMTP relay
+    SMTP_HOST_ADDR=smtp.example.com
+    SMTP_HOST_PORT=587
+    SMTP_USER_NAME=username
+    SMTP_USER_PWD=password
+    SMTP_HOST_SSL_ENABLED=false
+    
+    # Middlebox compatibility mode for TLS 1.3
+    SMTP_MIDDLEBOX_COMP_MODE=false
+    ```
+  </Tab>
+  
+  <Tab title="SMTP Adapter">
+    Classic SMTP adapter:
+    
+    ```bash
+    MAILER_ADAPTER=Bamboo.SMTPAdapter
+    MAILER_EMAIL=plausible@yourdomain.com
+    
+    SMTP_HOST_ADDR=mail.example.com
+    SMTP_HOST_PORT=25
+    SMTP_USER_NAME=username
+    SMTP_USER_PWD=password
+    SMTP_HOST_SSL_ENABLED=false
+    SMTP_RETRIES=2
+    SMTP_MX_LOOKUPS_ENABLED=true
+    ```
+  </Tab>
+  
+  <Tab title="Postmark">
+    Using Postmark service:
+    
+    ```bash
+    MAILER_ADAPTER=Bamboo.PostmarkAdapter
+    MAILER_EMAIL=plausible@yourdomain.com
+    POSTMARK_API_KEY=your-postmark-api-key
+    ```
+  </Tab>
+  
+  <Tab title="Mailgun">
+    Using Mailgun service:
+    
+    ```bash
+    MAILER_ADAPTER=Bamboo.MailgunAdapter
+    MAILER_EMAIL=plausible@yourdomain.com
+    MAILGUN_API_KEY=your-mailgun-api-key
+    MAILGUN_DOMAIN=mg.yourdomain.com
+    MAILGUN_BASE_URI=https://api.mailgun.net/v3  # Optional
+    ```
+  </Tab>
+  
+  <Tab title="SendGrid">
+    Using SendGrid service:
+    
+    ```bash
+    MAILER_ADAPTER=Bamboo.SendGridAdapter
+    MAILER_EMAIL=plausible@yourdomain.com
+    SENDGRID_API_KEY=your-sendgrid-api-key
+    ```
+  </Tab>
+  
+  <Tab title="Mandrill">
+    Using Mandrill service:
+    
+    ```bash
+    MAILER_ADAPTER=Bamboo.MandrillAdapter
+    MAILER_EMAIL=plausible@yourdomain.com
+    MANDRILL_API_KEY=your-mandrill-api-key
+    ```
+  </Tab>
+</Tabs>
+
+### Email Settings
+
+```bash
+# From address (defaults to plausible@{BASE_URL host})
+MAILER_EMAIL=analytics@yourdomain.com
+
+# From name
+MAILER_NAME=Your Analytics Platform
+```
+
+## Registration and Authentication
+
+### Registration Control
+
+```bash
+# Disable all registration
+DISABLE_REGISTRATION=true
+
+# Allow only invited users to register (CE default)
+DISABLE_REGISTRATION=invite_only
+
+# Allow anyone to register
+DISABLE_REGISTRATION=false
+```
+
+<Note>
+  Community Edition defaults to `invite_only` registration mode.
+</Note>
+
+### Email Verification
+
+```bash
+# Require email verification for new accounts
+ENABLE_EMAIL_VERIFICATION=false  # Disabled by default
+```
+
+### Two-Factor Authentication
+
+```bash
+# Optional: Custom TOTP vault key (32 bytes, base64 encoded)
+TOTP_VAULT_KEY=$(openssl rand -base64 32)
+```
+
+<Info>
+  If not set, TOTP vault key is derived from `SECRET_KEY_BASE`.
+</Info>
+
+## Geolocation
+
+Plausible includes a basic country database. For city-level geolocation:
+
+<CodeGroup>
+```bash MaxMind License (Recommended)
+# Automatically downloads and updates GeoLite2 database
+MAXMIND_LICENSE_KEY=your_license_key
+MAXMIND_EDITION=GeoLite2-City  # Default
+```
+
+```bash Custom Database File
+# Path to custom .mmdb file
+IP_GEOLOCATION_DB=/etc/plausible/dbip-city.mmdb
+```
+
+```bash GeoNames Source
+# Custom GeoNames data file
+GEONAMES_SOURCE_FILE=/path/to/geonames.tsv
+```
+</CodeGroup>
+
+## Data Storage
+
+### Data Directories
+
+```bash
+# Primary data directory for exports, imports, and cache
+DATA_DIR=/var/lib/plausible
+
+# Alternative: Persistent cache directory
+PERSISTENT_CACHE_DIR=/var/lib/plausible/cache
+```
+
+### S3 Storage (Optional)
+
+For CSV exports and imports using S3-compatible storage:
+
+```bash
+# Disable S3 (default: true)
+S3_DISABLED=false
+
+# S3 Configuration
+S3_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+S3_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+S3_REGION=us-east-1
+S3_ENDPOINT=https://s3.amazonaws.com
+
+# Bucket names
+S3_EXPORTS_BUCKET=plausible-exports
+S3_IMPORTS_BUCKET=plausible-imports
+```
+
+<Accordion title="Using Cloudflare R2">
+  ```bash
+  S3_DISABLED=false
+  S3_ACCESS_KEY_ID=your_access_key
+  S3_SECRET_ACCESS_KEY=your_secret_key
+  S3_REGION=auto
+  S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+  S3_EXPORTS_BUCKET=plausible-exports
+  S3_IMPORTS_BUCKET=plausible-imports
+  ```
+</Accordion>
+
+## Logging
+
+```bash
+# Log level: debug, info, notice, warning, error
+LOG_LEVEL=warning  # Default for production
+
+# Log format: standard or json
+LOG_FORMAT=standard
+
+# Log failed login attempts
+LOG_FAILED_LOGIN_ATTEMPTS=false
+```
+
+<CodeGroup>
+```bash Standard Format
+LOG_FORMAT=standard
+# Output: 2024-01-15 10:30:45 [info] Application started
+```
+
+```bash JSON Format
+LOG_FORMAT=json
+# Output: {"time":"2024-01-15T10:30:45Z","level":"info","message":"Application started"}
+```
+</CodeGroup>
+
+## Google Integration
+
+For Google Search Console and Google Analytics imports:
+
+```bash
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+<Steps>
+  <Step title="Create OAuth Application">
+    Go to Google Cloud Console and create OAuth 2.0 credentials
+  </Step>
+  
+  <Step title="Set Redirect URI">
+    Add `{BASE_URL}/auth/google/callback` as authorized redirect URI
+  </Step>
+  
+  <Step title="Enable APIs">
+    Enable Google Search Console API and Google Analytics API
+  </Step>
+</Steps>
+
+## Advanced Configuration
+
+### Admin Users
+
+```bash
+# Comma-separated list of user IDs with admin privileges
+ADMIN_USER_IDS=1,2,3
+```
+
+### Custom Script Name
+
+```bash
+# Change the tracking script filename
+CUSTOM_SCRIPT_NAME=analytics  # Serves as /js/analytics.js
+```
+
+### Background Jobs
+
+```bash
+# Disable cron jobs (not recommended)
+DISABLE_CRON=false
+```
+
+### Session Transfer
+
+```bash
+# Enable session transfer between versions (default: true in prod)
+ENABLE_SESSION_TRANSFER=true
+```
+
+### CAPTCHA (hCaptcha)
+
+```bash
+HCAPTCHA_SITEKEY=your-site-key
+HCAPTCHA_SECRET=your-secret-key
+```
+
+### Monitoring and Observability
+
+```bash
+# Sentry error tracking
+SENTRY_DSN=https://public@sentry.io/project
+
+# Honeycomb tracing
+HONEYCOMB_API_KEY=your-api-key
+HONEYCOMB_DATASET=plausible
+OTLP_ENDPOINT=https://api.honeycomb.io:443
+
+# Prometheus metrics (disabled by default in CE)
+PROMEX_DISABLED=true
+```
+
+### Environment
+
+```bash
+# Environment name for logging/monitoring
+ENVIRONMENT=prod
+
+# Application version
+APP_VERSION=2.1.0
+
+# Application host identifier
+APP_HOST=analytics-server-01
+```
+
+## TLS/HTTPS Configuration
+
+### Automatic TLS (Let's Encrypt)
+
+Community Edition supports automatic HTTPS certificate management:
+
+```bash
+# Enable HTTPS
+HTTPS_PORT=443
+HTTP_PORT=80  # Required for ACME validation
+
+# Domain must be public and resolve to server
+BASE_URL=https://analytics.yourdomain.com
+
+# Optional: Custom ACME directory
+ACME_DIRECTORY_URL=https://acme-v02.api.letsencrypt.org/directory
+```
+
+<Warning>
+  - Domain must not be an IP address or localhost
+  - Domain must be publicly accessible on port 80
+  - DNS must point to your server
+</Warning>
+
+## Import/Export Configuration
+
+```bash
+# Maximum buffer size for imports
+IMPORTED_MAX_BUFFER_SIZE=10000
+```
+
+## Configuration File Loading
+
+### From Files (Docker Secrets)
+
+```bash
+# Directory to read configuration files from
+CONFIG_DIR=/run/secrets
+```
+
+Plausible will look for files named after environment variables:
+
+```
+/run/secrets/
+├── BASE_URL
+├── SECRET_KEY_BASE
+├── DATABASE_URL
+└── ...
+```
+
+### Extra Elixir Configuration
+
+```bash
+# Path to additional Elixir config file
+EXTRA_CONFIG_PATH=/etc/plausible/extra_config.exs
+```
+
+## Validation Checklist
+
+<Checklist>
+  - [ ] `BASE_URL` is set and includes scheme (http/https)
+  - [ ] `SECRET_KEY_BASE` is at least 32 bytes
+  - [ ] Database URLs are correct and accessible
+  - [ ] Email configuration is valid (test with invite)
+  - [ ] Geolocation database is configured
+  - [ ] HTTPS is configured if using production domain
+  - [ ] Registration mode is set appropriately
+  - [ ] Log level is appropriate for environment
+</Checklist>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Upgrade Guide" icon="arrow-up" href="/self-hosting/upgrade">
+    Learn how to upgrade Plausible CE
+  </Card>
+  <Card title="Maintenance" icon="wrench" href="/self-hosting/maintenance">
+    Operations, backups, and monitoring
+  </Card>
+</CardGroup>

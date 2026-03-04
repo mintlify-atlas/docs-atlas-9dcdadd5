@@ -1,0 +1,74 @@
+---
+title: Delete Site
+description: Permanently delete a site and all its data
+---
+
+## DELETE /api/v1/sites/:site_id
+
+Permanently deletes a site and all associated data including stats, goals, and configuration. This action cannot be undone.
+
+<Warning>
+This is a destructive operation that permanently deletes all site data. This action cannot be reversed.
+</Warning>
+
+### Authentication
+
+Requires a valid API key with the `sites:provision:*` scope. You must be an owner of the site to delete it.
+
+### Path Parameters
+
+<ParamField path="site_id" type="string" required>
+  The domain of the site to delete. Can be the current domain or the previous domain if it was changed.
+  
+  Examples: `example.com`, `blog.example.com`
+</ParamField>
+
+### Response
+
+<ResponseField name="deleted" type="boolean">
+  Returns `true` if the site was successfully deleted.
+</ResponseField>
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://plausible.io/api/v1/sites/example.com \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```bash Delete by Old Domain
+# You can delete a site using its old domain after a domain change
+curl -X DELETE https://plausible.io/api/v1/sites/old-domain.com \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```json 200 Response
+{
+  "deleted": true
+}
+```
+
+```json 404 Error - Site Not Found
+{
+  "error": "Site could not be found"
+}
+```
+
+```json 401 Error - Insufficient Permissions
+{
+  "error": "Invalid API key. Please make sure you're using a valid API key with access to the resource you've requested."
+}
+```
+</CodeGroup>
+
+## Notes
+
+- Only site owners can delete a site - editors, admins, and viewers cannot perform this action
+- All site data will be permanently deleted, including:
+  - All pageview and event statistics
+  - Goals and funnels
+  - Custom properties configuration
+  - Shared links
+  - Email report subscriptions
+  - Guest memberships and invitations
+- This operation cannot be undone - make sure to export any data you need before deleting
+- Team-scoped API keys can only delete sites belonging to that specific team

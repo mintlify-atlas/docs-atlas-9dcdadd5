@@ -1,0 +1,670 @@
+---
+title: Framework Integration Guides
+description: Integration guides for popular frameworks and platforms including React, Next.js, Vue, Nuxt, Astro, and more
+---
+
+## Overview
+
+Plausible Analytics can be integrated with any modern web framework. This guide covers common integration patterns for popular frameworks and provides framework-specific examples.
+
+## General Approach
+
+All frameworks support one or both of these integration methods:
+
+1. **Script Tag** - Add the Plausible script to your HTML template
+2. **NPM Package** - Install `@plausible-analytics/tracker` and initialize programmatically
+
+<Note>
+  The NPM package only works in browser environments. For SSR frameworks, ensure tracking code runs client-side only.
+</Note>
+
+## React
+
+### Create React App
+
+<Tabs>
+  <Tab title="Script Tag">
+    Add the script to `public/index.html`:
+
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <script defer data-domain="yourdomain.com" 
+          src="https://plausible.io/js/script.js"></script>
+        <title>My App</title>
+      </head>
+      <body>
+        <div id="root"></div>
+      </body>
+    </html>
+    ```
+  </Tab>
+
+  <Tab title="NPM Package">
+    Install and initialize in your app:
+
+    ```bash
+    npm install @plausible-analytics/tracker
+    ```
+
+    In `src/index.js` or `src/App.js`:
+
+    ```javascript
+    import React, { useEffect } from 'react';
+    import { init } from '@plausible-analytics/tracker';
+
+    function App() {
+      useEffect(() => {
+        init({
+          domain: 'yourdomain.com',
+          hashBasedRouting: false
+        });
+      }, []);
+
+      return (
+        <div className="App">
+          {/* Your app content */}
+        </div>
+      );
+    }
+
+    export default App;
+    ```
+  </Tab>
+</Tabs>
+
+### React Router
+
+For single-page applications with React Router, pageviews are automatically tracked when using the NPM package.
+
+For manual pageview tracking:
+
+```javascript
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { track } from '@plausible-analytics/tracker';
+
+function usePageViews() {
+  const location = useLocation();
+
+  useEffect(() => {
+    track('pageview');
+  }, [location]);
+}
+
+function App() {
+  usePageViews();
+  
+  return (
+    // Your app
+  );
+}
+```
+
+### Custom Events in React
+
+```javascript
+import { track } from '@plausible-analytics/tracker';
+
+function SignupButton() {
+  const handleSignup = () => {
+    track('Signup', {
+      props: {
+        plan: 'premium',
+        method: 'email'
+      },
+      callback: () => {
+        console.log('Event tracked');
+      }
+    });
+  };
+
+  return <button onClick={handleSignup}>Sign Up</button>;
+}
+```
+
+## Next.js
+
+### App Router (Next.js 13+)
+
+<Tabs>
+  <Tab title="Script Component">
+    Add to `app/layout.tsx`:
+
+    ```tsx
+    import Script from 'next/script'
+
+    export default function RootLayout({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      return (
+        <html lang="en">
+          <head>
+            <Script
+              defer
+              data-domain="yourdomain.com"
+              src="https://plausible.io/js/script.js"
+            />
+          </head>
+          <body>{children}</body>
+        </html>
+      )
+    }
+    ```
+  </Tab>
+
+  <Tab title="NPM Package">
+    Create a client component `app/components/Analytics.tsx`:
+
+    ```tsx
+    'use client'
+
+    import { useEffect } from 'react'
+    import { init } from '@plausible-analytics/tracker'
+
+    export default function Analytics() {
+      useEffect(() => {
+        init({
+          domain: 'yourdomain.com'
+        })
+      }, [])
+
+      return null
+    }
+    ```
+
+    Add to `app/layout.tsx`:
+
+    ```tsx
+    import Analytics from './components/Analytics'
+
+    export default function RootLayout({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      return (
+        <html lang="en">
+          <body>
+            <Analytics />
+            {children}
+          </body>
+        </html>
+      )
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Pages Router (Next.js 12 and earlier)
+
+Add to `pages/_app.js`:
+
+```javascript
+import Script from 'next/script'
+
+function MyApp({ Component, pageProps }) {
+  return (
+    <>
+      <Script
+        defer
+        data-domain="yourdomain.com"
+        src="https://plausible.io/js/script.js"
+      />
+      <Component {...pageProps} />
+    </>
+  )
+}
+
+export default MyApp
+```
+
+### Tracking Route Changes
+
+Next.js App Router automatically triggers pageviews on route changes. For Pages Router with manual tracking:
+
+```javascript
+import { useEffect } from 'react'
+import { useRouter } from 'next/router'
+import { track } from '@plausible-analytics/tracker'
+
+function MyApp({ Component, pageProps }) {
+  const router = useRouter()
+
+  useEffect(() => {
+    const handleRouteChange = () => track('pageview')
+    router.events.on('routeChangeComplete', handleRouteChange)
+    return () => router.events.off('routeChangeComplete', handleRouteChange)
+  }, [router.events])
+
+  return <Component {...pageProps} />
+}
+```
+
+## Vue.js
+
+### Vue 3
+
+<Tabs>
+  <Tab title="Script Tag">
+    Add to `public/index.html`:
+
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <script defer data-domain="yourdomain.com" 
+          src="https://plausible.io/js/script.js"></script>
+        <title>My Vue App</title>
+      </head>
+      <body>
+        <div id="app"></div>
+      </body>
+    </html>
+    ```
+  </Tab>
+
+  <Tab title="NPM Package">
+    Install and create a plugin:
+
+    ```bash
+    npm install @plausible-analytics/tracker
+    ```
+
+    Create `src/plugins/plausible.js`:
+
+    ```javascript
+    import { init } from '@plausible-analytics/tracker'
+
+    export default {
+      install() {
+        init({
+          domain: 'yourdomain.com'
+        })
+      }
+    }
+    ```
+
+    Use in `src/main.js`:
+
+    ```javascript
+    import { createApp } from 'vue'
+    import App from './App.vue'
+    import plausible from './plugins/plausible'
+
+    createApp(App)
+      .use(plausible)
+      .mount('#app')
+    ```
+  </Tab>
+</Tabs>
+
+### Vue Router
+
+Track route changes:
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router'
+import { track } from '@plausible-analytics/tracker'
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [...]
+})
+
+router.afterEach(() => {
+  track('pageview')
+})
+
+export default router
+```
+
+### Custom Events in Vue
+
+```vue
+<template>
+  <button @click="handleSignup">Sign Up</button>
+</template>
+
+<script>
+import { track } from '@plausible-analytics/tracker'
+
+export default {
+  methods: {
+    handleSignup() {
+      track('Signup', {
+        props: {
+          plan: 'premium'
+        }
+      })
+    }
+  }
+}
+</script>
+```
+
+## Nuxt.js
+
+### Nuxt 3
+
+Create a plugin at `plugins/plausible.client.ts`:
+
+```typescript
+import { init } from '@plausible-analytics/tracker'
+
+export default defineNuxtPlugin(() => {
+  init({
+    domain: 'yourdomain.com'
+  })
+})
+```
+
+The `.client` suffix ensures it only runs on the client side.
+
+### Nuxt 2
+
+Create `plugins/plausible.client.js`:
+
+```javascript
+import { init } from '@plausible-analytics/tracker'
+
+export default () => {
+  init({
+    domain: 'yourdomain.com'
+  })
+}
+```
+
+Register in `nuxt.config.js`:
+
+```javascript
+export default {
+  plugins: [
+    { src: '~/plugins/plausible.client.js', mode: 'client' }
+  ]
+}
+```
+
+## Astro
+
+Add the script to your base layout:
+
+```astro
+---
+// src/layouts/Layout.astro
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <script defer data-domain="yourdomain.com" 
+      src="https://plausible.io/js/script.js"></script>
+    <title>My Astro Site</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+```
+
+For client-side tracking with NPM:
+
+```astro
+---
+// src/components/Analytics.astro
+---
+
+<script>
+import { init } from '@plausible-analytics/tracker'
+
+init({
+  domain: 'yourdomain.com'
+})
+</script>
+```
+
+## Svelte / SvelteKit
+
+### SvelteKit
+
+Add to `src/routes/+layout.svelte`:
+
+```svelte
+<script>
+  import { onMount } from 'svelte'
+  import { init } from '@plausible-analytics/tracker'
+
+  onMount(() => {
+    init({
+      domain: 'yourdomain.com'
+    })
+  })
+</script>
+
+<slot />
+```
+
+Or use the script tag in `src/app.html`:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <script defer data-domain="yourdomain.com" 
+      src="https://plausible.io/js/script.js"></script>
+    %sveltekit.head%
+  </head>
+  <body>
+    %sveltekit.body%
+  </body>
+</html>
+```
+
+## Angular
+
+Add to `src/index.html`:
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <script defer data-domain="yourdomain.com" 
+    src="https://plausible.io/js/script.js"></script>
+  <title>My Angular App</title>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>
+```
+
+For NPM package with router tracking:
+
+```typescript
+import { Component } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { init, track } from '@plausible-analytics/tracker';
+import { filter } from 'rxjs/operators';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html'
+})
+export class AppComponent {
+  constructor(private router: Router) {
+    init({ domain: 'yourdomain.com' });
+
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      track('pageview');
+    });
+  }
+}
+```
+
+## Gatsby
+
+Install the plugin:
+
+```bash
+npm install gatsby-plugin-plausible
+```
+
+Configure in `gatsby-config.js`:
+
+```javascript
+module.exports = {
+  plugins: [
+    {
+      resolve: 'gatsby-plugin-plausible',
+      options: {
+        domain: 'yourdomain.com'
+      }
+    }
+  ]
+}
+```
+
+## WordPress
+
+For WordPress sites, use one of these methods:
+
+1. **Official Plugin** - Install the Plausible Analytics WordPress plugin from the plugin directory
+2. **Manual Integration** - Add the script tag to your theme's header
+3. **Theme Functions** - Add via `functions.php`:
+
+```php
+function add_plausible_analytics() {
+  ?>
+  <script defer data-domain="yourdomain.com" 
+    src="https://plausible.io/js/script.js"></script>
+  <?php
+}
+add_action('wp_head', 'add_plausible_analytics');
+```
+
+## Static Site Generators
+
+### Jekyll
+
+Add to `_includes/head.html`:
+
+```html
+<script defer data-domain="{{ site.domain }}" 
+  src="https://plausible.io/js/script.js"></script>
+```
+
+### Hugo
+
+Add to `layouts/partials/head.html`:
+
+```html
+<script defer data-domain="{{ .Site.Params.domain }}" 
+  src="https://plausible.io/js/script.js"></script>
+```
+
+### Eleventy (11ty)
+
+Add to your base layout:
+
+```html
+<script defer data-domain="yourdomain.com" 
+  src="https://plausible.io/js/script.js"></script>
+```
+
+## Single Page Applications (SPAs)
+
+For SPAs, the tracker automatically detects URL changes via:
+- `history.pushState`
+- `history.replaceState`
+- Hash changes (with `hashBasedRouting: true`)
+
+No additional configuration needed when using `autoCapturePageviews: true` (the default).
+
+### Hash-based Routing
+
+For apps using hash-based routing (e.g., `#/page`):
+
+```javascript
+init({
+  domain: 'yourdomain.com',
+  hashBasedRouting: true
+})
+```
+
+Or with script tag:
+
+```html
+<script defer data-domain="yourdomain.com" 
+  src="https://plausible.io/js/script.hash.js"></script>
+```
+
+## Server-Side Rendering (SSR)
+
+<Warning>
+  The Plausible tracker only works in browser environments. For SSR frameworks, ensure initialization happens client-side only.
+</Warning>
+
+### Detecting Client-Side
+
+```javascript
+import { init } from '@plausible-analytics/tracker'
+
+if (typeof window !== 'undefined') {
+  init({
+    domain: 'yourdomain.com'
+  })
+}
+```
+
+## Testing
+
+When testing your integration:
+
+<Steps>
+  <Step title="Enable Localhost Tracking">
+    ```javascript
+    init({
+      domain: 'yourdomain.com',
+      captureOnLocalhost: true
+    })
+    ```
+  </Step>
+
+  <Step title="Check Browser Console">
+    Open DevTools and look for Plausible-related messages.
+  </Step>
+
+  <Step title="Verify Network Requests">
+    Check the Network tab for POST requests to `/api/event` with status 202.
+  </Step>
+
+  <Step title="Use Real-time Dashboard">
+    Visit your Plausible dashboard to see live visitor count.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tracker Script" icon="code" href="/integration/tracker-script">
+    Full tracker configuration reference
+  </Card>
+  <Card title="Custom Events" icon="chart-line" href="/integration/custom-events">
+    Track custom goals and conversions
+  </Card>
+  <Card title="Custom Properties" icon="tags" href="/integration/custom-properties">
+    Add metadata to your events
+  </Card>
+  <Card title="Events API" icon="code" href="/integration/events-api">
+    Server-side event tracking
+  </Card>
+</CardGroup>

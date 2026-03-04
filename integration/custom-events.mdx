@@ -1,0 +1,495 @@
+---
+title: Custom Event Tracking
+description: Track custom goals, user interactions, and conversions with Plausible Analytics custom events
+---
+
+## Overview
+
+Custom events allow you to track specific user interactions beyond pageviews, such as button clicks, form submissions, video plays, purchases, and more. Unlike pageviews, custom events require explicit tracking calls.
+
+## Tracking Methods
+
+There are three ways to track custom events in Plausible:
+
+1. **JavaScript API** - Programmatically track events using the `track()` function
+2. **Tagged Elements** - Automatically track clicks on elements with CSS classes
+3. **Auto-capture** - Enable automatic tracking of file downloads, outbound links, and form submissions
+
+## JavaScript API
+
+### Basic Event Tracking
+
+Use the `track()` function to send custom events:
+
+<CodeGroup>
+```javascript Script Tag
+// Track a simple event
+window.plausible('Signup');
+
+// Track with custom properties
+window.plausible('Signup', {
+  props: {
+    plan: 'premium',
+    method: 'google'
+  }
+});
+```
+
+```javascript NPM Package
+import { track } from '@plausible-analytics/tracker'
+
+// Track a simple event
+track('Signup');
+
+// Track with custom properties
+track('Signup', {
+  props: {
+    plan: 'premium',
+    method: 'google'
+  }
+});
+```
+</CodeGroup>
+
+### Event Options
+
+The `track()` function accepts an options object with the following fields:
+
+<ResponseField name="props" type="object">
+  Custom properties to attach to the event. All keys and values must be strings.
+  
+  ```javascript
+  track('Purchase', {
+    props: {
+      product: 'Pro Plan',
+      tier: 'monthly'
+    }
+  });
+  ```
+</ResponseField>
+
+<ResponseField name="interactive" type="boolean" default="true">
+  Whether the event is interactive. Non-interactive events don't affect bounce rate calculations.
+  
+  ```javascript
+  track('Video Autoplay', {
+    interactive: false
+  });
+  ```
+</ResponseField>
+
+<ResponseField name="revenue" type="object">
+  Revenue information for ecommerce tracking.
+  
+  ```javascript
+  track('Purchase', {
+    revenue: {
+      amount: 29.99,
+      currency: 'USD'
+    }
+  });
+  ```
+</ResponseField>
+
+<ResponseField name="callback" type="function">
+  Called when the tracking request completes or is ignored.
+  
+  ```javascript
+  track('Signup', {
+    callback: (result) => {
+      if (result?.status) {
+        console.log('Tracked successfully');
+      } else if (result?.error) {
+        console.error('Tracking error:', result.error);
+      } else {
+        console.log('Event was ignored');
+      }
+    }
+  });
+  ```
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  Override the URL of the page where the event occurred. By default, uses `location.href`.
+  
+  ```javascript
+  track('Modal Viewed', {
+    url: 'https://example.com/modal/pricing'
+  });
+  ```
+</ResponseField>
+
+## Tagged Events
+
+Tagged events allow you to track interactions without writing JavaScript. Simply add CSS classes to your HTML elements.
+
+### Basic Tagged Elements
+
+Add the `plausible-event-name` class to track clicks:
+
+```html
+<button class="plausible-event-name=Signup">Sign Up</button>
+
+<a href="/pricing" class="plausible-event-name=View+Pricing">View Pricing</a>
+```
+
+<Note>
+  Use `+` or spaces to separate words in event names within class names.
+</Note>
+
+### Tagged Events with Properties
+
+Add custom properties using additional classes:
+
+```html
+<button 
+  class="plausible-event-name=Signup plausible-event-plan=premium plausible-event-method=email">
+  Sign Up for Premium
+</button>
+```
+
+This tracks a "Signup" event with properties:
+```javascript
+{
+  plan: 'premium',
+  method: 'email'
+}
+```
+
+### Alternative Syntax
+
+You can use `--` instead of `=` for better compatibility with some frameworks:
+
+```html
+<button class="plausible-event-name--Signup plausible-event-plan--premium">
+  Sign Up
+</button>
+```
+
+### Tagged Links
+
+When tracking clicks on links, the URL is automatically added as a property:
+
+```html
+<a href="https://github.com/plausible" 
+   class="plausible-event-name=External+Link plausible-event-target=GitHub">
+  View on GitHub
+</a>
+```
+
+This creates an event with:
+```javascript
+{
+  target: 'GitHub',
+  url: 'https://github.com/plausible'
+}
+```
+
+### Tagged Forms
+
+Track form submissions by adding classes to the `<form>` element:
+
+```html
+<form class="plausible-event-name=Newsletter+Signup plausible-event-location=Footer">
+  <input type="email" placeholder="Enter your email" />
+  <button type="submit">Subscribe</button>
+</form>
+```
+
+## Auto-capture Features
+
+Plausible can automatically track common interactions when enabled.
+
+### File Downloads
+
+Automatically track clicks on file download links:
+
+<CodeGroup>
+```javascript NPM
+import { init } from '@plausible-analytics/tracker'
+
+init({
+  domain: 'example.com',
+  fileDownloads: true
+});
+```
+
+```html Script Tag
+<script defer data-domain="example.com" 
+  src="https://plausible.io/js/script.file-downloads.js"></script>
+```
+</CodeGroup>
+
+Default tracked file types:
+```javascript
+[
+  'pdf', 'xlsx', 'docx', 'txt', 'rtf', 'csv', 'exe', 'key',
+  'pps', 'ppt', 'pptx', '7z', 'pkg', 'rar', 'gz', 'zip',
+  'avi', 'mov', 'mp4', 'mpeg', 'wmv', 'midi', 'mp3', 'wav',
+  'wma', 'dmg'
+]
+```
+
+#### Custom File Types
+
+<Tabs>
+  <Tab title="NPM Package">
+    ```javascript
+    import { init, DEFAULT_FILE_TYPES } from '@plausible-analytics/tracker'
+
+    init({
+      domain: 'example.com',
+      fileDownloads: {
+        fileExtensions: ['pdf', 'zip', 'mp4']  // Only these types
+      }
+    });
+
+    // Or extend defaults
+    init({
+      domain: 'example.com',
+      fileDownloads: {
+        fileExtensions: [...DEFAULT_FILE_TYPES, 'sketch', 'fig']
+      }
+    });
+    ```
+  </Tab>
+
+  <Tab title="Script Tag">
+    ```html
+    <!-- Custom file types -->
+    <script defer data-domain="example.com" 
+      data-file-types="pdf,zip,mp4"
+      src="https://plausible.io/js/script.file-downloads.js"></script>
+
+    <!-- Add to default types -->
+    <script defer data-domain="example.com" 
+      data-add-file-types="sketch,fig"
+      src="https://plausible.io/js/script.file-downloads.js"></script>
+    ```
+  </Tab>
+</Tabs>
+
+File downloads are tracked as "File Download" events with a `url` property:
+
+```javascript
+{
+  name: 'File Download',
+  props: {
+    url: 'https://example.com/documents/report.pdf'
+  }
+}
+```
+
+### Outbound Links
+
+Automatically track clicks on external links:
+
+<CodeGroup>
+```javascript NPM
+import { init } from '@plausible-analytics/tracker'
+
+init({
+  domain: 'example.com',
+  outboundLinks: true
+});
+```
+
+```html Script Tag
+<script defer data-domain="example.com" 
+  src="https://plausible.io/js/script.outbound-links.js"></script>
+```
+</CodeGroup>
+
+Outbound link clicks are tracked as "Outbound Link: Click" events:
+
+```javascript
+{
+  name: 'Outbound Link: Click',
+  props: {
+    url: 'https://external-site.com/page'
+  }
+}
+```
+
+<Note>
+  An outbound link is any link where the `host` differs from the current page's `location.host`.
+</Note>
+
+### Form Submissions
+
+Automatically track form submissions:
+
+```javascript
+import { init } from '@plausible-analytics/tracker'
+
+init({
+  domain: 'example.com',
+  formSubmissions: true
+});
+```
+
+Form submissions are tracked as "Form: Submission" events when the form passes validation.
+
+<Warning>
+  If a form has tagged event classes, it will **not** be tracked as a generic "Form: Submission". Only the custom tagged event will fire.
+</Warning>
+
+### Combined Features
+
+Use a combined script to enable multiple features:
+
+```html
+<script defer data-domain="example.com" 
+  src="https://plausible.io/js/script.outbound-links.file-downloads.js"></script>
+```
+
+Available script variants:
+- `script.js` - Base tracker
+- `script.file-downloads.js` - With file download tracking
+- `script.outbound-links.js` - With outbound link tracking
+- `script.tagged-events.js` - With tagged events support
+- Combinations like `script.outbound-links.file-downloads.js`
+
+## Revenue Tracking
+
+Track revenue and ecommerce conversions:
+
+```javascript
+import { track } from '@plausible-analytics/tracker'
+
+track('Purchase', {
+  props: {
+    product: 'Pro Plan',
+    billing: 'monthly'
+  },
+  revenue: {
+    amount: 29.99,
+    currency: 'USD'
+  }
+});
+```
+
+<ResponseField name="revenue.amount" type="number | string" required>
+  Revenue amount in the specified currency.
+</ResponseField>
+
+<ResponseField name="revenue.currency" type="string" required>
+  ISO 4217 currency code (e.g., "USD", "EUR", "GBP").
+</ResponseField>
+
+For more details, see [ecommerce revenue tracking](https://plausible.io/docs/ecommerce-revenue-tracking).
+
+## Event Naming Guidelines
+
+<Steps>
+  <Step title="Use Clear, Descriptive Names">
+    Choose names that clearly describe the action:
+    - ✅ "Signup", "Download PDF", "Add to Cart"
+    - ❌ "Event1", "Click", "Action"
+  </Step>
+
+  <Step title="Be Consistent">
+    Use a consistent naming convention across your site:
+    - Capitalization: "Signup" or "signup", not both
+    - Spacing: "Add to Cart" or "Add_to_Cart", not both
+  </Step>
+
+  <Step title="Keep It Simple">
+    Avoid overly long or complex names. Use properties for additional context.
+  </Step>
+
+  <Step title="Configure Goals">
+    Remember to add custom events as goals in your Plausible dashboard to see them in reports.
+  </Step>
+</Steps>
+
+## Common Patterns
+
+### Button Clicks
+
+```javascript
+document.querySelector('#cta-button').addEventListener('click', () => {
+  track('CTA Clicked', {
+    props: {
+      location: 'hero',
+      variant: 'blue'
+    }
+  });
+});
+```
+
+### Video Engagement
+
+```javascript
+videoPlayer.on('play', () => {
+  track('Video Play', {
+    props: { video: 'product-demo' }
+  });
+});
+
+videoPlayer.on('complete', () => {
+  track('Video Complete', {
+    props: { video: 'product-demo' }
+  });
+});
+```
+
+### Newsletter Signups
+
+```javascript
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  track('Newsletter Signup', {
+    props: {
+      source: 'blog-footer'
+    },
+    callback: () => {
+      form.submit();
+    }
+  });
+});
+```
+
+### E-commerce Events
+
+```javascript
+// Add to cart
+track('Add to Cart', {
+  props: {
+    product: 'Premium Widget',
+    sku: 'WIDGET-001',
+    quantity: '2'
+  }
+});
+
+// Checkout
+track('Checkout Started', {
+  props: {
+    cart_value: '59.98'
+  }
+});
+
+// Purchase
+track('Purchase', {
+  props: {
+    order_id: 'ORD-12345',
+    items: '3'
+  },
+  revenue: {
+    amount: 59.98,
+    currency: 'USD'
+  }
+});
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Properties" icon="tags" href="/integration/custom-properties">
+    Add metadata and context to your events
+  </Card>
+  <Card title="Events API" icon="code" href="/integration/events-api">
+    Server-side event tracking
+  </Card>
+</CardGroup>

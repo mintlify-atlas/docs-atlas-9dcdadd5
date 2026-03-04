@@ -1,0 +1,336 @@
+---
+title: Privacy Features
+description: Built-in privacy protections that keep your analytics compliant with GDPR, CCPA, and other privacy regulations without compromising insights.
+---
+
+Plausible Analytics is built with privacy as a core principle. Unlike traditional analytics platforms, Plausible doesn't use cookies, doesn't track users across websites, and doesn't collect personally identifiable information.
+
+## Privacy-First Architecture
+
+Plausible's approach to privacy:
+
+<CardGroup cols={2}>
+  <Card title="No Cookies" icon="cookie-bite">
+    Zero cookies or persistent identifiers. Nothing stored in visitor browsers.
+  </Card>
+  <Card title="No Cross-Site Tracking" icon="ban">
+    Each site's data is completely isolated. No tracking networks.
+  </Card>
+  <Card title="No Personal Data" icon="user-shield">
+    No collection of PII. Visitors remain completely anonymous.
+  </Card>
+  <Card title="Lightweight Script" icon="feather">
+    Under 1KB script size. Minimal impact on page performance.
+  </Card>
+</CardGroup>
+
+## How Visitor Tracking Works
+
+Plausible identifies unique visitors without cookies or persistent storage:
+
+<Steps>
+  <Step title="Generate Daily Hash">
+    A unique visitor ID is created by combining:
+    - Visitor's IP address
+    - User Agent string
+    - Website domain
+    
+    This combination is hashed using a one-way encryption.
+  </Step>
+  
+  <Step title="Daily Rotation">
+    The hash salt rotates every 24 hours, making it impossible to track visitors across days. Yesterday's hash is completely different from today's.
+  </Step>
+  
+  <Step title="No Storage">
+    Nothing is stored on the visitor's device. No cookies, no localStorage, no fingerprinting.
+  </Step>
+  
+  <Step title="Anonymized Data">
+    Once the pageview is recorded, only aggregated statistics are stored. Individual visitor data cannot be reconstructed.
+  </Step>
+</Steps>
+
+<Info>
+This method provides accurate visitor counts and session data while maintaining complete anonymity and privacy.
+</Info>
+
+## Regulatory Compliance
+
+Plausible is designed to comply with major privacy regulations:
+
+### GDPR Compliance
+
+**General Data Protection Regulation (European Union)**
+
+- ✅ No cookies means no cookie consent required
+- ✅ No personal data collected
+- ✅ Data processing based on legitimate interest
+- ✅ Compliant with Article 6(1)(f)
+- ✅ No need for cookie banners in most cases
+
+<Note>
+Many Plausible users can operate without cookie consent banners. However, always consult with your legal team as requirements may vary based on your specific situation.
+</Note>
+
+### CCPA Compliance
+
+**California Consumer Privacy Act**
+
+- ✅ No sale of personal information
+- ✅ No personal data collected to begin with
+- ✅ Visitors cannot be identified
+- ✅ No opt-out mechanism needed
+
+### PECR Compliance
+
+**Privacy and Electronic Communications Regulations**
+
+- ✅ No cookies or similar technologies
+- ✅ No prior consent required for analytics
+- ✅ Compliant with UK and EU regulations
+
+### Other Regulations
+
+Plausible also complies with:
+- ePrivacy Directive
+- PIPEDA (Canada)
+- LGPD (Brazil)
+- Various regional privacy laws
+
+## Data Storage and Security
+
+### Where Data is Stored
+
+- **Cloud Infrastructure**: Plausible Cloud uses servers in the EU (Germany)
+- **Data Residency**: All data remains within the European Union
+- **Self-Hosted**: You control data location with self-hosted deployments
+
+### Data Encryption
+
+- **In Transit**: All data encrypted with TLS/HTTPS
+- **At Rest**: Database encryption for stored analytics data
+- **Hashed IDs**: Visitor identifiers are hashed and salted
+
+### Data Retention
+
+- **Forever by Default**: Analytics data stored indefinitely for insights
+- **Custom Retention**: Configure data retention policies
+- **Easy Deletion**: Delete all site data anytime
+
+<Warning>
+Deleting a site permanently removes all associated analytics data. This action cannot be undone.
+</Warning>
+
+## IP Address Handling
+
+Plausible processes IP addresses responsibly:
+
+### Collection Purpose
+
+IP addresses are used only to:
+- Generate anonymous visitor IDs (hashed daily)
+- Determine approximate geographic location (country/city)
+- Detect spam and prevent abuse
+
+### No Storage
+
+- IP addresses are **never stored** in the database
+- Used only at collection time, then discarded
+- Cannot be used to identify individuals later
+
+### Geographic Data
+
+Location data stored:
+- **Country** - Derived from IP
+- **Region/State** - Approximate location
+- **City** - General city area
+
+Not stored:
+- Exact coordinates
+- Precise addresses
+- Street-level location
+
+## Privacy Controls
+
+### Excluding Pages
+
+Exclude specific pages from tracking:
+
+```html
+<script defer data-domain="yourdomain.com" 
+        data-exclude="/admin/*,/account/*"
+        src="https://plausible.io/js/script.js">
+</script>
+```
+
+### Hash-Based Routing
+
+For single-page applications:
+
+```html
+<script defer data-domain="yourdomain.com"
+        src="https://plausible.io/js/script.hash.js">
+</script>
+```
+
+### Proxy Configuration
+
+Run Plausible through your own domain to:
+- Bypass ad blockers (for accurate data)
+- Maintain first-party data collection
+- Enhance privacy perception
+
+## Privacy Shields
+
+Additional privacy features to block unwanted traffic:
+
+<Accordion title="IP Blocking">
+Block traffic from specific IP addresses or ranges:
+- Exclude internal team traffic
+- Block known spam sources  
+- Filter data center IPs
+- Maintain clean analytics data
+</Accordion>
+
+<Accordion title="Country Blocking">
+Block traffic from entire countries:
+- Exclude regions not relevant to your business
+- Filter out spam-heavy locations
+- Focus on target markets
+</Accordion>
+
+<Accordion title="Hostname Filtering">
+Control which hostnames can send data:
+- Prevent data pollution from scrapers
+- Block unauthorized domains
+- Protect against traffic hijacking
+</Accordion>
+
+<Accordion title="Page Blocking">
+Block specific pages from analytics:
+- Exclude admin pages
+- Filter staging environments
+- Remove internal tools from stats
+</Accordion>
+
+## Transparency and Open Source
+
+### Open Source Code
+
+- **Fully Open Source**: Entire codebase available on GitHub
+- **Community Audited**: Security and privacy reviewed by thousands
+- **No Hidden Tracking**: Every line of code is public
+- **Self-Hostable**: Run your own instance with complete control
+
+### Data Ownership
+
+You own your data:
+- Export anytime in CSV or via API
+- Delete permanently whenever you want
+- No vendor lock-in
+- Full data portability
+
+## Privacy Policy Requirements
+
+Using Plausible typically simplifies your privacy policy:
+
+### What to Include
+
+```markdown
+We use Plausible Analytics to track overall trends in website usage. 
+Plausible Analytics collects only aggregated information, which does 
+not allow us to identify any visitor to our website. No personal data 
+is collected.
+
+For more information, see the Plausible Analytics Data Policy:
+https://plausible.io/data-policy
+```
+
+### Cookie Notice
+
+In most cases, **no cookie notice is required** because:
+- No cookies are used
+- No personal data collected
+- No consent mechanism needed
+
+<Info>
+Always consult your legal team about privacy policy requirements specific to your jurisdiction and business.
+</Info>
+
+## Comparison with Traditional Analytics
+
+| Feature | Plausible | Traditional Analytics |
+|---------|-----------|----------------------|
+| Cookies | ❌ None | ✅ Multiple cookies |
+| Personal Data | ❌ None | ✅ Extensive PII |
+| Cross-site Tracking | ❌ No | ✅ Yes |
+| Cookie Consent | ❌ Not needed | ✅ Required |
+| Script Size | &lt;1 KB | 45+ KB |
+| GDPR Compliant | ✅ Yes | ⚠️ Requires configuration |
+| Open Source | ✅ Yes | ❌ No |
+
+## Do Not Track (DNT)
+
+Plausible respects Do Not Track browser settings:
+
+- When DNT is enabled, no data is collected
+- Visitor privacy preference is honored
+- No tracking or analytics performed
+- Completely opt-out compliant
+
+## Data Processing Agreement
+
+For enterprise customers:
+
+- DPA available upon request
+- GDPR Article 28 compliant
+- Standard contractual clauses
+- Processor responsibilities documented
+
+## Privacy Audits
+
+Plausible undergoes regular security and privacy reviews:
+
+- Independent security audits
+- Community code reviews
+- Penetration testing
+- Privacy impact assessments
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Update Privacy Policy" icon="file-contract">
+    Include a brief mention of Plausible in your privacy policy.
+  </Card>
+  <Card title="Use Privacy Shields" icon="shield">
+    Block internal traffic and spam to keep data clean and private.
+  </Card>
+  <Card title="Review Regularly" icon="clock">
+    Periodically review what data you're collecting and why.
+  </Card>
+  <Card title="Stay Informed" icon="bell">
+    Keep up with privacy regulation changes in your jurisdictions.
+  </Card>
+</CardGroup>
+
+## Self-Hosting for Maximum Privacy
+
+For complete data control:
+
+- Host Plausible on your own infrastructure
+- Full control over data location
+- Custom data retention policies
+- Additional security measures
+- Integration with internal systems
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Dashboard" icon="chart-line" href="/features/dashboard">
+    Explore privacy-friendly analytics
+  </Card>
+  <Card title="Installation" icon="code" href="/quickstart">
+    Get started with Plausible
+  </Card>
+</CardGroup>

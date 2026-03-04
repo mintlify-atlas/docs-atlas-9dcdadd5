@@ -1,0 +1,269 @@
+---
+title: Delete Goal
+description: Delete goals from your Plausible Analytics site via the Plugins API
+---
+
+## Endpoint
+
+```
+DELETE /api/plugins/v1/goals/{id}
+```
+
+Deletes a goal by its ID. If the goal belongs to a funnel, the funnel will be automatically adjusted or removed.
+
+## Authentication
+
+Requires a Plugins API token with write access.
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+  
+  ```
+  Authorization: Bearer YOUR_API_TOKEN
+  ```
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique ID of the goal to delete
+  
+  **Example:** `123`
+</ParamField>
+
+## Response
+
+On successful deletion, returns a `204 No Content` status with an empty response body.
+
+## Status Codes
+
+- `204 No Content` - Goal deleted successfully
+- `401 Unauthorized` - Missing or invalid API token
+- `404 Not Found` - Goal with specified ID not found
+
+## Funnel Behavior
+
+When deleting a goal that belongs to one or more funnels:
+
+- **If the funnel has more than the minimum steps (2):** The step associated with the deleted goal is removed, and the funnel continues to exist with the remaining steps.
+- **If the funnel has exactly the minimum steps (2):** The entire funnel is deleted along with the goal, as a funnel cannot exist with fewer than 2 steps.
+
+## Examples
+
+### Delete a Goal
+
+<CodeGroup>
+
+```bash cURL
+curl -X DELETE "https://plausible.io/api/plugins/v1/goals/123" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+```javascript JavaScript
+const response = await fetch('https://plausible.io/api/plugins/v1/goals/123', {
+  method: 'DELETE',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_TOKEN'
+  }
+});
+
+if (response.status === 204) {
+  console.log('Goal deleted successfully');
+}
+```
+
+```python Python
+import requests
+
+response = requests.delete(
+    'https://plausible.io/api/plugins/v1/goals/123',
+    headers={'Authorization': 'Bearer YOUR_API_TOKEN'}
+)
+
+if response.status_code == 204:
+    print('Goal deleted successfully')
+```
+
+</CodeGroup>
+
+**Response:**
+
+```text
+HTTP/1.1 204 No Content
+```
+
+### Error: Goal Not Found
+
+<CodeGroup>
+
+```bash cURL
+curl -X DELETE "https://plausible.io/api/plugins/v1/goals/999999" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "error": "Not found"
+}
+```
+
+## Bulk Delete Goals
+
+```
+DELETE /api/plugins/v1/goals
+```
+
+Delete multiple goals in a single request.
+
+### Request Body
+
+<ParamField body="goal_ids" type="array" required>
+  Array of goal IDs to delete
+  
+  **Example:** `[123, 124, 125]`
+</ParamField>
+
+### Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X DELETE "https://plausible.io/api/plugins/v1/goals" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goal_ids": [123, 124, 125]
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://plausible.io/api/plugins/v1/goals', {
+  method: 'DELETE',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    goal_ids: [123, 124, 125]
+  })
+});
+
+if (response.status === 204) {
+  console.log('Goals deleted successfully');
+}
+```
+
+```python Python
+import requests
+
+response = requests.delete(
+    'https://plausible.io/api/plugins/v1/goals',
+    headers={
+        'Authorization': 'Bearer YOUR_API_TOKEN',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'goal_ids': [123, 124, 125]
+    }
+)
+
+if response.status_code == 204:
+    print('Goals deleted successfully')
+```
+
+</CodeGroup>
+
+**Response:**
+
+```text
+HTTP/1.1 204 No Content
+```
+
+## Delete All Goals for a Site
+
+<CodeGroup>
+
+```javascript JavaScript
+// Fetch all goals and delete them
+async function deleteAllGoals(apiToken) {
+  // First, get all goals
+  const response = await fetch('https://plausible.io/api/plugins/v1/goals?limit=1000', {
+    headers: { 'Authorization': `Bearer ${apiToken}` }
+  });
+  
+  const data = await response.json();
+  const goalIds = data.goals.map(g => g.goal.id);
+  
+  if (goalIds.length === 0) {
+    console.log('No goals to delete');
+    return;
+  }
+  
+  // Delete all goals in bulk
+  const deleteResponse = await fetch('https://plausible.io/api/plugins/v1/goals', {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${apiToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ goal_ids: goalIds })
+  });
+  
+  console.log(`Deleted ${goalIds.length} goals`);
+}
+
+await deleteAllGoals('YOUR_API_TOKEN');
+```
+
+```python Python
+import requests
+
+def delete_all_goals(api_token):
+    # First, get all goals
+    response = requests.get(
+        'https://plausible.io/api/plugins/v1/goals',
+        headers={'Authorization': f'Bearer {api_token}'},
+        params={'limit': 1000}
+    )
+    
+    data = response.json()
+    goal_ids = [g['goal']['id'] for g in data['goals']]
+    
+    if not goal_ids:
+        print('No goals to delete')
+        return
+    
+    # Delete all goals in bulk
+    delete_response = requests.delete(
+        'https://plausible.io/api/plugins/v1/goals',
+        headers={
+            'Authorization': f'Bearer {api_token}',
+            'Content-Type': 'application/json'
+        },
+        json={'goal_ids': goal_ids}
+    )
+    
+    print(f'Deleted {len(goal_ids)} goals')
+
+delete_all_goals('YOUR_API_TOKEN')
+```
+
+</CodeGroup>
+
+## Notes
+
+- Deletion is permanent and cannot be undone
+- Historical event data is not affected - only the goal definition is removed
+- Deleting a goal removes it from all associated funnels
+- If a funnel has only 2 steps and one goal is deleted, the entire funnel is removed
+- Goals can only be deleted for sites you have access to via your API token
+- Non-existent goal IDs in bulk delete operations are silently ignored
+
+## Related Endpoints
+
+- [List Goals](/api/goals/list) - Retrieve all goals to find IDs
+- [Create Goal](/api/goals/create) - Create a new goal

@@ -1,0 +1,648 @@
+---
+title: Maintenance & Operations
+description: Guide to maintaining, backing up, and monitoring your Plausible Analytics Community Edition installation
+---
+
+## Daily Operations
+
+### Monitoring Container Health
+
+Regularly check that all services are running:
+
+```bash
+# Check container status
+docker compose ps
+
+# Expected output: All services should be "Up" or "healthy"
+```
+
+<Tabs>
+  <Tab title="Plausible">
+    ```bash
+    docker compose logs plausible --tail=100 --follow
+    ```
+    
+    Watch for:
+    - Application startup messages
+    - Error logs
+    - Request timeouts
+    - Database connection issues
+  </Tab>
+  
+  <Tab title="PostgreSQL">
+    ```bash
+    docker compose logs plausible_db --tail=100 --follow
+    ```
+    
+    Watch for:
+    - Connection errors
+    - Slow queries
+    - Disk space warnings
+    - Replication issues (if configured)
+  </Tab>
+  
+  <Tab title="ClickHouse">
+    ```bash
+    docker compose logs plausible_events_db --tail=100 --follow
+    ```
+    
+    Watch for:
+    - Insert errors
+    - Memory issues
+    - Merge tree problems
+    - Query timeouts
+  </Tab>
+</Tabs>
+
+### Health Check Endpoints
+
+Plausible provides health check endpoints:
+
+```bash
+# Liveness probe - is the application running?
+curl http://localhost:8000/api/system/health/live
+
+# Readiness probe - is the application ready to serve traffic?
+curl http://localhost:8000/api/system/health/ready
+
+# Legacy health check (soft-deprecated)
+curl http://localhost:8000/api/health
+```
+
+<Info>
+  Use `/api/system/health/live` and `/api/system/health/ready` for Kubernetes probes and load balancers.
+</Info>
+
+## Backup Strategy
+
+### PostgreSQL Backups
+
+<Steps>
+  <Step title="Manual Backup">
+    Create a full database dump:
+    
+    ```bash
+    docker compose exec plausible_db pg_dump -U postgres plausible_db > backup_$(date +%Y%m%d_%H%M%S).sql
+    ```
+  </Step>
+
+  <Step title="Compressed Backup">
+    For large databases:
+    
+    ```bash
+    docker compose exec plausible_db pg_dump -U postgres plausible_db | gzip > backup_$(date +%Y%m%d_%H%M%S).sql.gz
+    ```
+  </Step>
+
+  <Step title="Automated Backups">
+    Add a cron job:
+    
+    ```bash
+    # Edit crontab
+    crontab -e
+    
+    # Add daily backup at 2 AM
+    0 2 * * * cd /path/to/community-edition && docker compose exec -T plausible_db pg_dump -U postgres plausible_db | gzip > /backups/postgres/backup_$(date +\%Y\%m\%d).sql.gz
+    ```
+  </Step>
+</Steps>
+
+### ClickHouse Backups
+
+ClickHouse data is the largest component:
+
+<CodeGroup>
+```bash Native Backup (Recommended)
+# Create backup using ClickHouse's native backup system
+docker compose exec plausible_events_db clickhouse-client --query \
+  "BACKUP DATABASE plausible_events_db TO Disk('backups', 'backup_$(date +%Y%m%d).zip')"
+```
+
+```bash Manual Data Export
+# Export specific tables
+docker compose exec plausible_events_db clickhouse-client --query \
+  "SELECT * FROM plausible_events_db.events_v2 FORMAT Native" > events_backup.native
+```
+
+```bash Volume Backup
+# Backup the entire ClickHouse data volume (service must be stopped)
+docker compose stop plausible_events_db
+tar czf clickhouse_data_$(date +%Y%m%d).tar.gz -C /var/lib/docker/volumes community-edition_event-data
+docker compose start plausible_events_db
+```
+</CodeGroup>
+
+<Warning>
+  ClickHouse backups can be very large. Ensure you have sufficient disk space and consider backup retention policies.
+</Warning>
+
+### Restore Procedures
+
+<Tabs>
+  <Tab title="PostgreSQL">
+    ```bash
+    # Stop services
+    docker compose down
+    
+    # Start only PostgreSQL
+    docker compose up -d plausible_db
+    
+    # Wait for database to be ready
+    sleep 5
+    
+    # Drop and recreate database
+    docker compose exec plausible_db psql -U postgres -c "DROP DATABASE IF EXISTS plausible_db;"
+    docker compose exec plausible_db psql -U postgres -c "CREATE DATABASE plausible_db;"
+    
+    # Restore from backup
+    gunzip -c backup_20240115.sql.gz | docker compose exec -T plausible_db psql -U postgres plausible_db
+    
+    # Start all services
+    docker compose up -d
+    ```
+  </Tab>
+  
+  <Tab title="ClickHouse">
+    ```bash
+    # Stop services
+    docker compose down
+    
+    # Start only ClickHouse
+    docker compose up -d plausible_events_db
+    
+    # Restore from native backup
+    docker compose exec plausible_events_db clickhouse-client --query \
+      "RESTORE DATABASE plausible_events_db FROM Disk('backups', 'backup_20240115.zip')"
+    
+    # Start all services
+    docker compose up -d
+    ```
+  </Tab>
+</Tabs>
+
+## Database Maintenance
+
+### PostgreSQL Maintenance
+
+<AccordionGroup>
+  <Accordion title="Vacuum Database">
+    Reclaim storage and update statistics:
+    
+    ```bash
+    # Regular vacuum (doesn't lock tables)
+    docker compose exec plausible_db psql -U postgres plausible_db -c "VACUUM ANALYZE;"
+    
+    # Full vacuum (locks tables, schedule during low traffic)
+    docker compose exec plausible_db psql -U postgres plausible_db -c "VACUUM FULL ANALYZE;"
+    ```
+    
+    Schedule monthly with cron:
+    ```bash
+    0 3 1 * * cd /path/to/community-edition && docker compose exec -T plausible_db psql -U postgres plausible_db -c "VACUUM ANALYZE;"
+    ```
+  </Accordion>
+
+  <Accordion title="Check Database Size">
+    ```bash
+    docker compose exec plausible_db psql -U postgres plausible_db -c \
+      "SELECT pg_size_pretty(pg_database_size('plausible_db'));"
+    ```
+  </Accordion>
+
+  <Accordion title="Monitor Connections">
+    ```bash
+    docker compose exec plausible_db psql -U postgres -c \
+      "SELECT count(*) FROM pg_stat_activity;"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### ClickHouse Maintenance
+
+<AccordionGroup>
+  <Accordion title="Optimize Tables">
+    Manually trigger merges for better performance:
+    
+    ```bash
+    # Optimize events table
+    docker compose exec plausible_events_db clickhouse-client --query \
+      "OPTIMIZE TABLE plausible_events_db.events_v2 FINAL"
+    
+    # Optimize sessions table
+    docker compose exec plausible_events_db clickhouse-client --query \
+      "OPTIMIZE TABLE plausible_events_db.sessions_v2 FINAL"
+    ```
+    
+    <Note>
+      OPTIMIZE FINAL can be resource-intensive. Run during low-traffic periods.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Check Table Sizes">
+    ```bash
+    docker compose exec plausible_events_db clickhouse-client --query \
+      "SELECT table, formatReadableSize(sum(bytes)) as size FROM system.parts WHERE database = 'plausible_events_db' AND active GROUP BY table ORDER BY sum(bytes) DESC"
+    ```
+  </Accordion>
+
+  <Accordion title="Monitor Merges">
+    ```bash
+    docker compose exec plausible_events_db clickhouse-client --query \
+      "SELECT * FROM system.merges"
+    ```
+  </Accordion>
+
+  <Accordion title="Drop Old Partitions">
+    For data retention (e.g., keep only 2 years):
+    
+    ```bash
+    # List partitions
+    docker compose exec plausible_events_db clickhouse-client --query \
+      "SELECT partition, table FROM system.parts WHERE database = 'plausible_events_db' GROUP BY partition, table ORDER BY partition"
+    
+    # Drop specific partition (CAUTION: This deletes data!)
+    docker compose exec plausible_events_db clickhouse-client --query \
+      "ALTER TABLE plausible_events_db.events_v2 DROP PARTITION '202201'"
+    ```
+    
+    <Warning>
+      Dropping partitions permanently deletes data. Always backup first!
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+## Log Management
+
+### View Logs
+
+```bash
+# All services
+docker compose logs --tail=100 --follow
+
+# Specific service
+docker compose logs plausible --tail=100 --follow
+
+# Since specific time
+docker compose logs --since="2024-01-15T10:00:00" plausible
+
+# Filter by pattern
+docker compose logs plausible | grep ERROR
+```
+
+### Log Rotation
+
+Configure Docker logging driver in `docker-compose.yml`:
+
+```yaml
+services:
+  plausible:
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+```
+
+### Export Logs
+
+```bash
+# Export to file
+docker compose logs --no-color > plausible_logs_$(date +%Y%m%d).log
+
+# Export with timestamps
+docker compose logs --timestamps --no-color > plausible_logs_$(date +%Y%m%d).log
+```
+
+## Performance Monitoring
+
+### Resource Usage
+
+<CodeGroup>
+```bash Container Stats
+# Real-time resource monitoring
+docker stats
+
+# Specific container
+docker stats community-edition-plausible-1
+```
+
+```bash Disk Usage
+# Check Docker disk usage
+docker system df
+
+# Detailed breakdown
+docker system df -v
+```
+
+```bash Database Sizes
+# PostgreSQL
+docker compose exec plausible_db psql -U postgres -c \
+  "SELECT pg_size_pretty(pg_database_size('plausible_db'));"
+
+# ClickHouse
+docker compose exec plausible_events_db clickhouse-client --query \
+  "SELECT formatReadableSize(sum(bytes)) FROM system.parts WHERE active"
+```
+</CodeGroup>
+
+### Query Performance
+
+<Tabs>
+  <Tab title="PostgreSQL">
+    ```bash
+    # Slow queries
+    docker compose exec plausible_db psql -U postgres plausible_db -c \
+      "SELECT query, calls, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;"
+    ```
+  </Tab>
+  
+  <Tab title="ClickHouse">
+    ```bash
+    # Recent queries
+    docker compose exec plausible_events_db clickhouse-client --query \
+      "SELECT query, query_duration_ms FROM system.query_log WHERE type = 'QueryFinish' ORDER BY query_start_time DESC LIMIT 10"
+    
+    # Slow queries
+    docker compose exec plausible_events_db clickhouse-client --query \
+      "SELECT query, query_duration_ms FROM system.query_log WHERE type = 'QueryFinish' AND query_duration_ms > 1000 ORDER BY query_duration_ms DESC LIMIT 10"
+    ```
+  </Tab>
+</Tabs>
+
+## Cleanup and Optimization
+
+### Docker Cleanup
+
+```bash
+# Remove unused images
+docker image prune -a
+
+# Remove unused volumes (CAUTION: Can delete data!)
+docker volume prune
+
+# Remove all unused data
+docker system prune -a --volumes
+```
+
+<Warning>
+  `docker volume prune` will delete all unused volumes, including database volumes if containers are stopped. Always verify volumes before pruning.
+</Warning>
+
+### Clean Old Data
+
+<Steps>
+  <Step title="Session Cleanup">
+    Plausible automatically cleans old user sessions every 2 hours via cron jobs.
+  </Step>
+
+  <Step title="Invitation Cleanup">
+    Old invitations are cleaned daily at 1 AM.
+  </Step>
+
+  <Step title="Analytics Data">
+    Manually archive or delete old analytics data:
+    
+    ```bash
+    # Export old data before deletion
+    docker compose exec plausible_events_db clickhouse-client --query \
+      "SELECT * FROM plausible_events_db.events_v2 WHERE timestamp < '2022-01-01' FORMAT Native" > old_events.native
+    
+    # Delete old data
+    docker compose exec plausible_events_db clickhouse-client --query \
+      "ALTER TABLE plausible_events_db.events_v2 DELETE WHERE timestamp < '2022-01-01'"
+    ```
+  </Step>
+</Steps>
+
+## Security Maintenance
+
+### Update Docker Images
+
+Regularly update base images for security patches:
+
+```bash
+# Pull latest images
+docker compose pull
+
+# Recreate containers
+docker compose up -d
+```
+
+### Review Access Logs
+
+```bash
+# Check for suspicious activity
+docker compose logs plausible | grep "401\|403\|404"
+
+# Failed login attempts (if LOG_FAILED_LOGIN_ATTEMPTS=true)
+docker compose logs plausible | grep "Failed login"
+```
+
+### Rotate Secrets
+
+<Warning>
+  Rotating `SECRET_KEY_BASE` will invalidate all user sessions. Plan accordingly.
+</Warning>
+
+<Steps>
+  <Step title="Generate New Secret">
+    ```bash
+    openssl rand -base64 64
+    ```
+  </Step>
+
+  <Step title="Update Configuration">
+    Edit `plausible-conf.env` with the new secret
+  </Step>
+
+  <Step title="Restart Services">
+    ```bash
+    docker compose down
+    docker compose up -d
+    ```
+  </Step>
+
+  <Step title="Notify Users">
+    All users will need to log in again
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="High Memory Usage">
+    **Symptoms:** Containers consuming excessive RAM
+    
+    **Solutions:**
+    1. Check ClickHouse memory settings
+    2. Reduce `CLICKHOUSE_INGEST_POOL_SIZE`
+    3. Optimize queries
+    4. Add more RAM or enable swap
+    5. Review `max_memory_usage` in ClickHouse config
+  </Accordion>
+
+  <Accordion title="Disk Space Issues">
+    **Symptoms:** "No space left on device" errors
+    
+    **Solutions:**
+    1. Check disk usage: `df -h`
+    2. Clean Docker: `docker system prune -a`
+    3. Clean old logs
+    4. Archive old analytics data
+    5. Optimize ClickHouse tables
+    6. Add more storage
+  </Accordion>
+
+  <Accordion title="Database Connection Errors">
+    **Symptoms:** Cannot connect to PostgreSQL or ClickHouse
+    
+    **Solutions:**
+    1. Check database container status
+    2. Verify `DATABASE_URL` and `CLICKHOUSE_DATABASE_URL`
+    3. Check network connectivity
+    4. Review database logs
+    5. Restart database containers
+    6. Verify credentials
+  </Accordion>
+
+  <Accordion title="Slow Dashboard Performance">
+    **Symptoms:** Dashboard takes long to load
+    
+    **Solutions:**
+    1. Optimize ClickHouse tables: `OPTIMIZE TABLE ... FINAL`
+    2. Check for slow queries in ClickHouse logs
+    3. Increase ClickHouse memory allocation
+    4. Review and optimize custom goals
+    5. Consider archiving very old data
+    6. Check server resources (CPU, RAM, disk I/O)
+  </Accordion>
+
+  <Accordion title="Email Not Sending">
+    **Symptoms:** Invites and reports not delivered
+    
+    **Solutions:**
+    1. Check `MAILER_ADAPTER` configuration
+    2. Verify SMTP credentials
+    3. Test email configuration:
+       ```bash
+       docker compose exec plausible sh -c "/app/bin/plausible eval 'Plausible.Mailer.send_test_email(\"your@email.com\")'"
+       ```
+    4. Review mailer logs
+    5. Check firewall rules for SMTP ports
+    6. Verify DNS records (SPF, DKIM)
+  </Accordion>
+</AccordionGroup>
+
+## Monitoring Setup
+
+### Prometheus Metrics (Optional)
+
+<Info>
+  PromEx is disabled by default in Community Edition. Enable it for Prometheus monitoring.
+</Info>
+
+```bash
+# In plausible-conf.env
+PROMEX_DISABLED=false
+```
+
+Metrics will be available at `http://localhost:8000/metrics`.
+
+### External Monitoring
+
+Set up external monitoring for production:
+
+<CardGroup cols={2}>
+  <Card title="Uptime Monitoring" icon="heartbeat">
+    Use services like UptimeRobot or Pingdom to monitor `/api/system/health/live`
+  </Card>
+  
+  <Card title="Log Aggregation" icon="file-lines">
+    Forward logs to services like Loki, ELK, or Datadog
+  </Card>
+  
+  <Card title="Error Tracking" icon="bug">
+    Configure Sentry for application error tracking with `SENTRY_DSN`
+  </Card>
+  
+  <Card title="Metrics" icon="chart-simple">
+    Use Prometheus + Grafana for detailed metrics and dashboards
+  </Card>
+</CardGroup>
+
+## Maintenance Checklist
+
+<Tabs>
+  <Tab title="Daily">
+    <Checklist>
+      - [ ] Check container status (`docker compose ps`)
+      - [ ] Review error logs
+      - [ ] Monitor disk space
+      - [ ] Verify tracking is working
+    </Checklist>
+  </Tab>
+  
+  <Tab title="Weekly">
+    <Checklist>
+      - [ ] Review resource usage
+      - [ ] Check backup success
+      - [ ] Test restore procedure (monthly)
+      - [ ] Review slow queries
+      - [ ] Update Docker images if needed
+    </Checklist>
+  </Tab>
+  
+  <Tab title="Monthly">
+    <Checklist>
+      - [ ] Run PostgreSQL VACUUM
+      - [ ] Optimize ClickHouse tables
+      - [ ] Review and archive old data
+      - [ ] Check for Plausible updates
+      - [ ] Test disaster recovery
+      - [ ] Review security logs
+      - [ ] Update documentation
+    </Checklist>
+  </Tab>
+  
+  <Tab title="Quarterly">
+    <Checklist>
+      - [ ] Major version upgrade (if available)
+      - [ ] Full backup verification
+      - [ ] Security audit
+      - [ ] Performance review
+      - [ ] Capacity planning
+      - [ ] Documentation update
+    </Checklist>
+  </Tab>
+</Tabs>
+
+## Getting Help
+
+<CardGroup cols={2}>
+  <Card title="GitHub Discussions" icon="github" href="https://github.com/plausible/analytics/discussions/categories/self-hosted-support">
+    Community support forum for self-hosting issues
+  </Card>
+  
+  <Card title="Documentation" icon="book" href="https://github.com/plausible/community-edition/">
+    Official Community Edition documentation
+  </Card>
+  
+  <Card title="Issue Tracker" icon="bug" href="https://github.com/plausible/analytics/issues">
+    Report bugs and feature requests
+  </Card>
+  
+  <Card title="Changelog" icon="list" href="https://github.com/plausible/analytics/blob/master/CHANGELOG.md">
+    Review changes and known issues
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/self-hosting/configuration">
+    Review and optimize your configuration
+  </Card>
+  <Card title="Upgrade Guide" icon="arrow-up" href="/self-hosting/upgrade">
+    Plan your next upgrade
+  </Card>
+</CardGroup>

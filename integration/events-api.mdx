@@ -1,0 +1,391 @@
+---
+title: Events API
+description: Send events to Plausible Analytics from your server or backend applications using the Events API
+---
+
+## Overview
+
+The Plausible Events API allows you to track events from server-side applications, mobile apps, or any environment where the JavaScript tracker cannot be used. Events are sent as HTTP POST requests to the Plausible API endpoint.
+
+## API Endpoint
+
+All events are sent to:
+
+```
+POST https://plausible.io/api/event
+```
+
+For self-hosted instances, replace the domain with your Plausible server URL.
+
+## Authentication
+
+The Events API does not require authentication for basic event tracking. Events are associated with your site based on the `domain` field in the request payload.
+
+<Warning>
+  Do not confuse the Events API (for tracking) with the Stats API (for retrieving analytics data). The Stats API requires authentication via API keys.
+</Warning>
+
+## Request Format
+
+Events are sent as JSON POST requests with the following structure:
+
+### Headers
+
+```http
+Content-Type: application/json
+User-Agent: Mozilla/5.0 (compatible; YourApp/1.0)
+X-Forwarded-For: 192.168.1.1
+```
+
+<Note>
+  The `User-Agent` header is used to detect the visitor's browser and operating system. The `X-Forwarded-For` header can be used to pass the visitor's IP address when making requests from a server.
+</Note>
+
+### Payload Structure
+
+The JSON payload contains event data with shortened field names for efficiency:
+
+```json
+{
+  "n": "pageview",
+  "u": "https://example.com/blog/post",
+  "d": "example.com",
+  "r": "https://google.com",
+  "v": "1.0.0"
+}
+```
+
+### Payload Fields
+
+<ResponseField name="n" type="string" required>
+  Event name. Use `"pageview"` for pageviews or any custom event name.
+</ResponseField>
+
+<ResponseField name="u" type="string" required>
+  URL of the page where the event occurred. Must include protocol and domain.
+</ResponseField>
+
+<ResponseField name="d" type="string" required>
+  Domain of your site as configured in Plausible.
+</ResponseField>
+
+<ResponseField name="r" type="string">
+  Referrer URL. The page that linked to the current page.
+</ResponseField>
+
+<ResponseField name="v" type="string">
+  Tracker script version for debugging purposes.
+</ResponseField>
+
+<ResponseField name="p" type="object">
+  Custom properties for the event. See [custom properties documentation](/integration/custom-properties).
+  
+  ```json
+  "p": {
+    "author": "John Doe",
+    "category": "Technology"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="i" type="boolean" default="true">
+  Whether the event is interactive. Non-interactive events don't affect bounce rate.
+  
+  ```json
+  "i": false
+  ```
+</ResponseField>
+
+<ResponseField name="$" type="object">
+  Revenue information for ecommerce tracking. See [revenue tracking](#revenue-tracking).
+  
+  ```json
+  "$": {
+    "amount": "29.99",
+    "currency": "USD"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="h" type="number">
+  Set to `1` for hash-based routing. Includes the URL hash in pageview tracking.
+</ResponseField>
+
+## Response Codes
+
+The API returns the following HTTP status codes:
+
+| Status Code | Description |
+|-------------|-------------|
+| `202` | Event accepted and queued for processing |
+| `400` | Bad request - invalid payload or validation error |
+| `429` | Too many requests - rate limit exceeded |
+
+### Success Response
+
+```http
+HTTP/1.1 202 Accepted
+Content-Type: text/plain
+
+ok
+```
+
+### Error Response
+
+```http
+HTTP/1.1 400 Bad Request
+Content-Type: application/json
+
+{
+  "errors": {
+    "domain": ["can't be blank"],
+    "name": ["can't be blank"]
+  }
+}
+```
+
+## Examples
+
+### Pageview Event
+
+Track a simple pageview:
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://plausible.io/api/event \
+  -H 'Content-Type: application/json' \
+  -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' \
+  -d '{
+    "n": "pageview",
+    "u": "https://example.com/blog",
+    "d": "example.com",
+    "r": "https://google.com"
+  }'
+```
+
+```javascript Node.js
+const fetch = require('node-fetch');
+
+async function trackPageview() {
+  const response = await fetch('https://plausible.io/api/event', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'X-Forwarded-For': '192.168.1.1'
+    },
+    body: JSON.stringify({
+      n: 'pageview',
+      u: 'https://example.com/blog',
+      d: 'example.com',
+      r: 'https://google.com',
+      v: '1.0.0'
+    })
+  });
+
+  if (response.status === 202) {
+    console.log('Event tracked successfully');
+  } else {
+    const error = await response.json();
+    console.error('Error tracking event:', error);
+  }
+}
+
+trackPageview();
+```
+
+```python Python
+import requests
+import json
+
+def track_pageview():
+    url = 'https://plausible.io/api/event'
+    headers = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'X-Forwarded-For': '192.168.1.1'
+    }
+    payload = {
+        'n': 'pageview',
+        'u': 'https://example.com/blog',
+        'd': 'example.com',
+        'r': 'https://google.com',
+        'v': '1.0.0'
+    }
+    
+    response = requests.post(url, headers=headers, json=payload)
+    
+    if response.status_code == 202:
+        print('Event tracked successfully')
+    else:
+        print(f'Error: {response.json()}')
+
+track_pageview()
+```
+
+```php PHP
+<?php
+$url = 'https://plausible.io/api/event';
+$headers = [
+    'Content-Type: application/json',
+    'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'X-Forwarded-For: 192.168.1.1'
+];
+$payload = [
+    'n' => 'pageview',
+    'u' => 'https://example.com/blog',
+    'd' => 'example.com',
+    'r' => 'https://google.com',
+    'v' => '1.0.0'
+];
+
+$ch = curl_init($url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+
+$response = curl_exec($ch);
+$statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+
+if ($statusCode === 202) {
+    echo 'Event tracked successfully';
+} else {
+    echo 'Error: ' . $response;
+}
+?>
+```
+</CodeGroup>
+
+### Custom Event with Properties
+
+Track a custom event with additional metadata:
+
+```json
+{
+  "n": "Signup",
+  "u": "https://example.com/signup",
+  "d": "example.com",
+  "p": {
+    "plan": "premium",
+    "method": "google"
+  }
+}
+```
+
+### Revenue Tracking
+
+Track an event with revenue information:
+
+```json
+{
+  "n": "Purchase",
+  "u": "https://example.com/checkout/success",
+  "d": "example.com",
+  "p": {
+    "product": "Pro Plan"
+  },
+  "$": {
+    "amount": "29.99",
+    "currency": "USD"
+  }
+}
+```
+
+<Note>
+  Revenue tracking requires the appropriate plan. See [ecommerce revenue tracking](https://plausible.io/docs/ecommerce-revenue-tracking) for more details.
+</Note>
+
+### Non-Interactive Event
+
+Track an event that shouldn't affect bounce rate:
+
+```json
+{
+  "n": "Video Autoplay",
+  "u": "https://example.com/video",
+  "d": "example.com",
+  "i": false
+}
+```
+
+## Event Processing
+
+When an event is received, Plausible processes it through an ingestion pipeline that:
+
+1. Validates the request payload
+2. Checks for bot traffic and spam referrers
+3. Applies site-specific filters (IP blocklist, country blocklist, etc.)
+4. Extracts geolocation data from the IP address
+5. Parses the User-Agent for browser and OS information
+6. Associates the event with a visitor session
+7. Buffers the event for batch insertion into the database
+
+### Event Validation
+
+Events are validated against the following rules:
+
+- `domain` must match a configured site in your Plausible account
+- `name` (event name) cannot be blank
+- `url` must be a valid URL with protocol
+- Custom property keys and values must be strings
+- Revenue `amount` must be numeric
+- Revenue `currency` must be a valid ISO 4217 currency code
+
+### Drop Reasons
+
+Events may be dropped for various reasons:
+
+- Bot traffic detected via User-Agent
+- Spam referrer blocklist match
+- Data center or threat IP address
+- Site-specific shield rules (IP blocklist, country blocklist, page blocklist)
+- Hostname not in site's allowlist
+- Invalid event data
+
+## Rate Limits
+
+The Events API has rate limits to prevent abuse:
+
+- 600 events per minute per domain
+- Burst capacity of 120 events
+
+<Warning>
+  Exceeding rate limits will result in HTTP 429 responses. Implement exponential backoff for retries.
+</Warning>
+
+## Best Practices
+
+<Steps>
+  <Step title="Set Accurate User-Agent">
+    Always send a realistic `User-Agent` header to ensure accurate browser and OS tracking.
+  </Step>
+  
+  <Step title="Forward Client IP">
+    Use `X-Forwarded-For` header to pass the actual visitor IP when making server-side requests.
+  </Step>
+  
+  <Step title="Handle Errors Gracefully">
+    Check response status codes and handle validation errors appropriately.
+  </Step>
+  
+  <Step title="Don't Track Sensitive Data">
+    Never send personally identifiable information (PII) in URLs or custom properties.
+  </Step>
+  
+  <Step title="Use Async Requests">
+    Send events asynchronously to avoid blocking your application.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Events" icon="chart-line" href="/integration/custom-events">
+    Learn about custom event tracking
+  </Card>
+  <Card title="Custom Properties" icon="tags" href="/integration/custom-properties">
+    Add metadata to your events
+  </Card>
+</CardGroup>

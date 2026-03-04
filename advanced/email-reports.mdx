@@ -1,0 +1,414 @@
+---
+title: Email Reports
+description: Automate weekly and monthly analytics reports delivered to your inbox
+---
+
+Plausible can automatically send analytics reports to your email on a weekly or monthly basis. These reports include key metrics, top pages, traffic sources, and goal conversions to keep you informed about your site's performance.
+
+## Report Types
+
+Plausible offers two types of scheduled email reports:
+
+- **Weekly Reports**: Sent every Monday, covering the previous week (Monday to Sunday)
+- **Monthly Reports**: Sent on the 1st of each month, covering the previous month
+
+<Info>
+Reports are only sent for sites with active data and valid subscriptions.
+</Info>
+
+## Setting Up Email Reports
+
+<Steps>
+  <Step title="Navigate to Site Settings">
+    Go to Site Settings > Email Reports
+  </Step>
+  
+  <Step title="Choose Report Type">
+    Select whether you want to enable weekly reports, monthly reports, or both.
+  </Step>
+  
+  <Step title="Add Recipients">
+    Enter email addresses for people who should receive the reports. You can add multiple recipients.
+  </Step>
+  
+  <Step title="Save Configuration">
+    Save your settings. Reports will be automatically sent according to the schedule.
+  </Step>
+</Steps>
+
+## Report Schema
+
+### Weekly Reports
+
+```elixir
+schema "weekly_reports" do
+  field :recipients, {:array, :string}
+  belongs_to :site, Plausible.Site
+  
+  timestamps()
+end
+```
+
+### Monthly Reports
+
+```elixir
+schema "monthly_reports" do
+  field :recipients, {:array, :string}
+  belongs_to :site, Plausible.Site
+  
+  timestamps()
+end
+```
+
+<Note>
+Each site can have one weekly report configuration and one monthly report configuration.
+</Note>
+
+## Managing Recipients
+
+### Adding Recipients
+
+Add email addresses to receive reports:
+
+```elixir
+# Add a single recipient
+WeeklyReport.add_recipient(report, "user@example.com")
+MonthlyReport.add_recipient(report, "user@example.com")
+```
+
+**Requirements:**
+- Valid email address format
+- Can add multiple recipients per report
+- Recipients don't need a Plausible account
+
+### Removing Recipients
+
+Remove an email address from the recipient list:
+
+```elixir
+# Remove a recipient
+WeeklyReport.remove_recipient(report, "user@example.com")
+MonthlyReport.remove_recipient(report, "user@example.com")
+```
+
+<Warning>
+Removing a recipient takes effect immediately. They won't receive future reports for this site.
+</Warning>
+
+### Viewing Recipients
+
+See all current recipients:
+1. Navigate to Site Settings > Email Reports
+2. View the list of email addresses under each report type
+3. Add or remove recipients as needed
+
+## Report Contents
+
+Email reports include comprehensive analytics data:
+
+### Key Metrics
+
+- **Visitors**: Unique visitor count with period-over-period comparison
+- **Pageviews**: Total pageviews with change percentage
+- **Bounce Rate**: Percentage with trend indicator
+
+```elixir
+%{
+  pageviews: %{value: 15234, change: 12.5},
+  visitors: %{value: 8932, change: -3.2},
+  bounce_rate: %{value: 58.3, change: 1.2}
+}
+```
+
+### Top Pages (Top 5)
+
+Most visited pages with visitor counts:
+
+```elixir
+[
+  %{page: "/", visitors: 3421},
+  %{page: "/blog", visitors: 1893},
+  %{page: "/about", visitors: 942},
+  %{page: "/pricing", visitors: 721},
+  %{page: "/contact", visitors: 512}
+]
+```
+
+### Top Sources (Top 5)
+
+Traffic sources excluding direct traffic:
+
+```elixir
+[
+  %{source: "Google", visitors: 2341},
+  %{source: "Twitter", visitors: 1523},
+  %{source: "github.com", visitors: 892},
+  %{source: "news.ycombinator.com", visitors: 621},
+  %{source: "Facebook", visitors: 445}
+]
+```
+
+### Goal Conversions (Top 5)
+
+If you have goals configured:
+
+```elixir
+[
+  %{goal: "Signup", visitors: 421},
+  %{goal: "Purchase", visitors: 156},
+  %{goal: "Download", visitors: 893},
+  %{goal: "Subscribe", visitors: 234},
+  %{goal: "Contact", visitors: 178}
+]
+```
+
+<Info>
+All metrics include comparison with the previous period, showing percentage changes and trends.
+</Info>
+
+## Report Schedule
+
+### Weekly Reports
+
+**Schedule:**
+- Sent every Monday morning
+- Covers the previous week (Monday to Sunday)
+- Uses your site's configured timezone
+
+**Date Range Calculation:**
+```elixir
+# First day: Previous Monday
+first = site.timezone
+  |> DateTime.now!()
+  |> Date.shift(day: -7)
+  |> Date.beginning_of_week()
+
+# Last day: Previous Sunday
+last = site.timezone
+  |> DateTime.now!()
+  |> DateTime.to_date()
+  |> Date.shift(day: -7)
+  |> Date.end_of_week()
+```
+
+### Monthly Reports
+
+**Schedule:**
+- Sent on the 1st of each month
+- Covers the entire previous month
+- Named after the month (e.g., "November", "December")
+
+**Date Range Calculation:**
+```elixir
+# First day: First day of previous month
+first = site.timezone
+  |> DateTime.now!()
+  |> Date.shift(month: -1)
+  |> Date.beginning_of_month()
+
+# Last day: Last day of previous month
+last = site.timezone
+  |> DateTime.now!()
+  |> DateTime.shift(month: -1)
+  |> DateTime.to_date()
+  |> Date.end_of_month()
+```
+
+<Note>
+All reports respect your site's timezone setting to ensure accurate date ranges.
+</Note>
+
+## Report Delivery
+
+### Sending Process
+
+Reports are sent via Oban background jobs:
+
+```elixir
+use Oban.Worker, queue: :send_email_reports, max_attempts: 1
+```
+
+**Process:**
+1. Scheduled job triggers at the appropriate time
+2. Site data is queried for the reporting period
+3. Stats are calculated with comparisons
+4. Email is generated using the MJML template
+5. Report is sent to all recipients
+
+### Email Template
+
+Reports use the `stats_report.mjml` template with:
+- Responsive email design
+- Clear metric presentation
+- Comparison indicators (▲/▼)
+- Unsubscribe link for each recipient
+
+<Info>
+Recipients can unsubscribe from reports using the link in each email without affecting their site access.
+</Info>
+
+## Unsubscribing from Reports
+
+Each email includes an unsubscribe link:
+
+```
+/sites/{domain}/weekly-report/unsubscribe?email={email}
+/sites/{domain}/monthly-report/unsubscribe?email={email}
+```
+
+**Process:**
+1. Click the unsubscribe link in any report email
+2. Confirm you want to unsubscribe
+3. Email is removed from the recipient list
+4. No future reports will be sent to that address
+
+<Warning>
+Unsubscribing is immediate and permanent. To re-subscribe, a site owner or admin must add the email address again.
+</Warning>
+
+## Site Member Status
+
+Reports include information about whether the recipient is a site member:
+
+```elixir
+site_member?: site_member?(site, email)
+```
+
+This helps recipients understand their relationship to the site:
+- **Site members**: Have account access and can log in to view full analytics
+- **Non-members**: Receive reports but don't have dashboard access
+
+## Requirements and Limitations
+
+### Report Requirements
+
+For reports to be sent, the site must:
+
+✅ Have at least one recipient configured
+✅ Have an active subscription (or be in trial)
+✅ Be a regular site (not locked or in grace period)
+
+**Community Edition:**
+- Reports always send if configured
+
+**Enterprise Edition:**
+```elixir
+Plausible.Sites.regular?(site) or
+  (Plausible.Sites.consolidated?(site) and
+    Plausible.ConsolidatedView.ok_to_display?(site.team))
+```
+
+### Constraints
+
+- One weekly report configuration per site
+- One monthly report configuration per site
+- Unlimited recipients per report type
+- Reports sent via Oban (queue: `:send_email_reports`)
+- Single attempt per email (no retries)
+
+<Note>
+If report generation fails, it won't be retried. Check your email logs if reports aren't arriving.
+</Note>
+
+## Use Cases
+
+### Team Updates
+
+Keep your entire team informed:
+```
+Recipients:
+- team@company.com
+- marketing@company.com
+- product@company.com
+```
+
+### Client Reporting
+
+Automate client reports:
+```
+Weekly Report Recipients:
+- client@example.com
+- account-manager@agency.com
+```
+
+### Executive Summaries
+
+Provide monthly overviews to leadership:
+```
+Monthly Report Recipients:
+- ceo@company.com
+- cmo@company.com
+- board@company.com
+```
+
+### Personal Monitoring
+
+Stay informed about your side projects:
+```
+Weekly Report Recipients:
+- you@email.com
+```
+
+## Troubleshooting
+
+**Not receiving reports?**
+
+<Steps>
+  <Step title="Check Recipient List">
+    Verify your email address is in the recipients list
+  </Step>
+  
+  <Step title="Check Spam Folder">
+    Reports might be filtered to spam by your email provider
+  </Step>
+  
+  <Step title="Verify Site Status">
+    Ensure your site has an active subscription
+  </Step>
+  
+  <Step title="Check Site Data">
+    Confirm your site has analytics data for the reporting period
+  </Step>
+  
+  <Step title="Review Email Address">
+    Make sure the email address is correct and not bouncing
+  </Step>
+</Steps>
+
+**Reports stopped arriving?**
+- Check if you accidentally unsubscribed
+- Verify your subscription is still active
+- Ensure your site wasn't locked or deleted
+
+**Wrong data in reports?**
+- Check your site's timezone setting
+- Verify the reporting period matches your expectations
+- Review any active filters or segments
+
+## Best Practices
+
+<Note>
+Optimize your email reporting setup:
+</Note>
+
+- **Choose the right frequency**: Weekly for active monitoring, monthly for high-level trends
+- **Limit recipients**: Only send to people who need the data
+- **Use both types**: Weekly for operations team, monthly for executives
+- **Set correct timezone**: Ensure your site timezone matches your location
+- **Monitor unsubscribes**: If people unsubscribe, consider if reports are too frequent
+- **Combine with shared links**: Use reports for regular updates, shared links for ad-hoc access
+- **Whitelist sender**: Add Plausible's sending address to your email whitelist
+
+## Email vs. Dashboard
+
+**Use email reports when:**
+- You want automated, regular updates
+- Recipients don't need dashboard access
+- You want period-over-period comparisons
+- A summary is sufficient
+
+**Use the dashboard when:**
+- You need real-time data
+- You want to drill down into specific metrics
+- You need custom date ranges
+- You want to explore different dimensions

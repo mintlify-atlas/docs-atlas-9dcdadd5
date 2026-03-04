@@ -1,0 +1,243 @@
+---
+title: Custom Events
+description: Track custom user actions and conversions with custom events in Plausible Analytics
+---
+
+## Overview
+
+Custom events allow you to track specific user actions beyond pageviews, such as button clicks, form submissions, file downloads, and purchases. Custom events are sent to the same Event Ingestion endpoint as pageviews.
+
+## Sending Custom Events
+
+Custom events use the same `/api/event` endpoint as pageviews, but with a custom event name.
+
+```
+POST /api/event
+```
+
+## Event Names
+
+<ParamField body="n" type="string" required>
+  Custom event name (also accepts `name` field)
+  
+  **Requirements:**
+  - Maximum length: 120 characters
+  - Cannot be empty or whitespace
+  - Cannot be `engagement` (reserved for internal use)
+  
+  **Common examples:**
+  - `Signup`
+  - `Purchase`
+  - `Download`
+  - `Outbound Link: Click`
+  - `File Download`
+  - `Form: Submission`
+  - `404`
+</ParamField>
+
+## Custom Properties
+
+Attach additional metadata to your custom events using custom properties (props).
+
+<ParamField body="p" type="object">
+  Custom properties object (also accepts `props`, `m`, or `meta` fields)
+  
+  **Constraints:**
+  - Maximum 30 properties per event
+  - Property keys: maximum 300 bytes
+  - Property values: maximum 2000 bytes
+  - Both keys and values must be strings
+  
+  **Example:**
+  ```json
+  {
+    "plan": "premium",
+    "method": "stripe",
+    "amount": "99"
+  }
+  ```
+</ParamField>
+
+## System Events
+
+Plausible provides several built-in system events that can be automatically tracked:
+
+### Outbound Link Clicks
+
+Event name: `Outbound Link: Click`
+
+Tracks clicks on external links leaving your domain.
+
+### File Downloads
+
+Event name: `File Download`
+
+Tracks downloads of common file types (PDF, ZIP, etc.).
+
+### Form Submissions
+
+Event name: `Form: Submission`
+
+Tracks form submission events.
+
+### 404 Pages
+
+Event name: `404`
+
+Tracks page not found errors. Event names can be integers or strings.
+
+## Examples
+
+### Basic Custom Event
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://plausible.io/api/event \
+  -H "Content-Type: application/json" \
+  -H "User-Agent: Mozilla/5.0" \
+  -d '{
+    "n": "Signup",
+    "u": "https://example.com/signup/success",
+    "d": "example.com"
+  }'
+```
+
+```javascript JavaScript
+// Using the Plausible tracking script
+plausible('Signup');
+
+// Or manually via fetch
+fetch('https://plausible.io/api/event', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    n: 'Signup',
+    u: window.location.href,
+    d: window.location.hostname
+  })
+});
+```
+
+</CodeGroup>
+
+### Custom Event with Properties
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://plausible.io/api/event \
+  -H "Content-Type: application/json" \
+  -H "User-Agent: Mozilla/5.0" \
+  -d '{
+    "n": "Purchase",
+    "u": "https://example.com/checkout/success",
+    "d": "example.com",
+    "p": {
+      "product": "Premium Plan",
+      "variant": "annual",
+      "currency": "USD"
+    }
+  }'
+```
+
+```javascript JavaScript
+// Using the Plausible tracking script
+plausible('Purchase', {
+  props: {
+    product: 'Premium Plan',
+    variant: 'annual',
+    currency: 'USD'
+  }
+});
+
+// Or manually via fetch
+fetch('https://plausible.io/api/event', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    n: 'Purchase',
+    u: window.location.href,
+    d: window.location.hostname,
+    p: {
+      product: 'Premium Plan',
+      variant: 'annual',
+      currency: 'USD'
+    }
+  })
+});
+```
+
+</CodeGroup>
+
+### Button Click Tracking
+
+<CodeGroup>
+
+```javascript JavaScript
+document.getElementById('cta-button').addEventListener('click', () => {
+  plausible('CTA Click', {
+    props: {
+      button: 'Get Started',
+      location: 'hero'
+    }
+  });
+});
+```
+
+```html HTML
+<button onclick="plausible('CTA Click', {props: {button: 'Get Started', location: 'hero'}})">
+  Get Started
+</button>
+```
+
+</CodeGroup>
+
+### File Download Tracking
+
+```javascript
+document.querySelectorAll('a[href$=".pdf"]').forEach(link => {
+  link.addEventListener('click', (e) => {
+    plausible('File Download', {
+      props: {
+        filename: e.target.href.split('/').pop(),
+        type: 'pdf'
+      }
+    });
+  });
+});
+```
+
+## Event Processing
+
+When a custom event is received:
+
+1. **Validation** - Event name and properties are validated
+2. **User Identification** - User ID is generated from IP, user agent, and domain
+3. **Geolocation** - Country, region, and city are detected from IP
+4. **Device Detection** - Browser, OS, and screen size are parsed from user agent
+5. **Source Attribution** - Referrer and UTM parameters are processed
+6. **Shield Rules** - Event is checked against IP, country, page, and hostname filters
+7. **Session Management** - Event is associated with or creates a new session
+8. **Buffering** - Event is buffered and written to ClickHouse
+
+## Custom Event Goals
+
+To track conversions for custom events, you need to create a goal in your Plausible dashboard or via the Goals API.
+
+See the [Create Goal](/api/goals/create) endpoint for details on setting up custom event goals.
+
+## Best Practices
+
+1. **Use descriptive event names** - Make event names clear and specific (`Signup` instead of `click`)
+2. **Keep property keys short** - Use concise keys to save space (`plan` instead of `subscription_plan_type`)
+3. **Use consistent naming** - Maintain a naming convention across your events
+4. **Limit property count** - Only track properties you'll actually use for analysis
+5. **String values only** - Convert numbers and booleans to strings for properties
+6. **Test events first** - Verify events appear in your dashboard before deploying
+
+## Related Endpoints
+
+- [Event Ingestion](/api/events/ingestion) - Full event ingestion API reference
+- [Create Goal](/api/goals/create) - Set up goals to track custom event conversions
+- [List Goals](/api/goals/list) - View all goals configured for your site

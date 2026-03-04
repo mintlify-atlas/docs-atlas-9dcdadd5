@@ -1,0 +1,244 @@
+---
+title: Event Ingestion
+description: Send pageview and custom events to Plausible Analytics via the Event Ingestion API
+---
+
+## Endpoint
+
+```
+POST /api/event
+```
+
+The Event Ingestion endpoint accepts pageview and custom events from your website or application. This is the primary endpoint used by the Plausible Analytics tracking script.
+
+## Authentication
+
+No authentication required. Events are associated with sites based on the `domain` or `url` parameter.
+
+## Request Headers
+
+<ParamField header="User-Agent" type="string">
+  The user agent string from the visitor's browser. Used for browser and OS detection.
+</ParamField>
+
+<ParamField header="X-Plausible-IP-Type" type="string">
+  Optional IP classification header. Values: `dc_ip`, `threat_ip`, `anonymous_vpn_ip`
+</ParamField>
+
+## Request Body
+
+<ParamField body="n" type="string" required>
+  Event name. Also accepts `name` as an alternative field. Maximum length: 120 characters.
+  
+  **Note:** The event name `engagement` is reserved for internal use and cannot be used as a custom event.
+</ParamField>
+
+<ParamField body="u" type="string" required>
+  Full URL of the page. Also accepts `url` as an alternative field. Maximum length: 2000 bytes.
+  
+  The URL scheme cannot be `data`.
+</ParamField>
+
+<ParamField body="d" type="string">
+  Domain name. Also accepts `domain` as an alternative field. Can be a comma-separated list for tracking multiple domains.
+  
+  If not provided, extracted from the `url` parameter.
+</ParamField>
+
+<ParamField body="r" type="string">
+  Referrer URL. Also accepts `referrer` as an alternative field. Maximum length: 2000 bytes.
+</ParamField>
+
+<ParamField body="p" type="object">
+  Custom properties (props) for the event. Also accepts `props`, `m`, or `meta` as alternative fields.
+  
+  - Maximum 30 properties per event
+  - Keys: maximum 300 bytes
+  - Values: maximum 2000 bytes
+  - Keys and values must be strings (lists and maps are filtered out)
+</ParamField>
+
+<ParamField body="h" type="integer">
+  Hash mode. Also accepts `hashMode` as an alternative field.
+  
+  When set to `1`, includes the URL fragment in the pathname.
+</ParamField>
+
+<ParamField body="i" type="boolean" default="true">
+  Interactive flag. Also accepts `interactive` as an alternative field.
+  
+  Set to `false` to mark the event as non-interactive (won't affect bounce rate).
+  
+  **Note:** Some system events (like `pageview`) always have `interactive` set to `true`.
+</ParamField>
+
+<ParamField body="v" type="integer">
+  Tracker script version number. Used internally for telemetry.
+</ParamField>
+
+<ParamField body="sd" type="integer">
+  Scroll depth percentage (0-100). Required for `engagement` events.
+  
+  Values above 100 are clamped to 100.
+</ParamField>
+
+<ParamField body="e" type="integer">
+  Engagement time in milliseconds. Required for `engagement` events.
+  
+  Must be less than 30 days (2,592,000,000 ms).
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="integer">
+  HTTP status code:
+  - `202` - Event accepted and buffered successfully
+  - `400` - Invalid request (see error response)
+</ResponseField>
+
+### Success Response
+
+```text
+HTTP/1.1 202 Accepted
+
+ok
+```
+
+### Partial Success Response
+
+When some events are dropped but the request is otherwise valid:
+
+```text
+HTTP/1.1 202 Accepted
+X-Plausible-Dropped: 1
+
+ok
+```
+
+<ResponseField name="X-Plausible-Dropped" type="string">
+  Number of events dropped during processing. Present when events were filtered out due to spam, bots, shields, etc.
+</ResponseField>
+
+### Error Response
+
+```json
+{
+  "errors": {
+    "url": ["is required"],
+    "event_name": ["can't be blank"]
+  }
+}
+```
+
+## Drop Reasons
+
+Events may be dropped for the following reasons:
+
+- `:bot` - Detected as bot traffic (including Headless Chrome)
+- `:spam_referrer` - Referrer matches spam blocklist
+- `:dc_ip` - Datacenter IP address
+- `:threat_ip` - Threat IP address
+- `:site_ip_blocklist` - Blocked by site's IP shield rules
+- `:site_country_blocklist` - Blocked by site's country shield rules
+- `:site_page_blocklist` - Blocked by site's page shield rules
+- `:site_hostname_allowlist` - Not allowed by site's hostname allowlist
+- `:verification_agent` - Internal verification agent
+- `:invalid` - Failed validation
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://plausible.io/api/event \
+  -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "n": "pageview",
+    "u": "https://example.com/blog",
+    "d": "example.com",
+    "r": "https://google.com"
+  }'
+```
+
+```javascript JavaScript
+fetch('https://plausible.io/api/event', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'User-Agent': navigator.userAgent
+  },
+  body: JSON.stringify({
+    n: 'pageview',
+    u: window.location.href,
+    d: window.location.hostname,
+    r: document.referrer
+  })
+});
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://plausible.io/api/event',
+    headers={
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    },
+    json={
+        'n': 'pageview',
+        'u': 'https://example.com/blog',
+        'd': 'example.com',
+        'r': 'https://google.com'
+    }
+)
+
+print(response.status_code)  # 202
+```
+
+</CodeGroup>
+
+## Custom Event Example
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://plausible.io/api/event \
+  -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "n": "Signup",
+    "u": "https://example.com/signup",
+    "d": "example.com",
+    "p": {
+      "plan": "premium",
+      "method": "google"
+    }
+  }'
+```
+
+```javascript JavaScript
+fetch('https://plausible.io/api/event', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    n: 'Signup',
+    u: window.location.href,
+    d: window.location.hostname,
+    p: {
+      plan: 'premium',
+      method: 'google'
+    }
+  })
+});
+```
+
+</CodeGroup>
+
+## Notes
+
+- Events are processed asynchronously and buffered before being written to ClickHouse
+- The endpoint returns `202 Accepted` immediately after validation, before the event is persisted
+- User IDs are generated based on IP address, user agent, domain, and rotating salts
+- Geolocation is performed based on the visitor's IP address
+- Sessions are tracked automatically based on user ID and timestamp

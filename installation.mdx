@@ -1,0 +1,488 @@
+---
+title: "Installation Guide"
+description: "Choose between Plausible Cloud managed hosting or self-hosted Community Edition. Complete installation instructions for both options."
+---
+
+## Choose Your Installation Method
+
+Plausible Analytics offers two deployment options to fit your needs:
+
+<CardGroup cols={2}>
+  <Card title="Plausible Cloud" icon="cloud">
+    **Managed hosting** - We handle everything: infrastructure, updates, backups, security, and scaling
+  </Card>
+  
+  <Card title="Community Edition" icon="server">
+    **Self-hosted** - Complete control over your data and infrastructure, but you manage it all
+  </Card>
+</CardGroup>
+
+## Plausible Cloud (Recommended)
+
+Our managed cloud service is the fastest way to get started with Plausible Analytics.
+
+### Why Choose Plausible Cloud?
+
+<CardGroup cols={2}>
+  <Card title="2-Minute Setup" icon="bolt">
+    Start tracking in minutes with zero infrastructure management
+  </Card>
+  
+  <Card title="Worldwide CDN" icon="globe">
+    Fast script loading from edge locations around the world
+  </Card>
+  
+  <Card title="High Availability" icon="shield-check">
+    99.9% uptime with automated backups and disaster recovery
+  </Card>
+  
+  <Card title="Always Updated" icon="arrows-rotate">
+    Get new features multiple times per week, automatically
+  </Card>
+  
+  <Card title="Advanced Bot Filtering" icon="robot">
+    Excludes ~32K data center IP ranges and sophisticated bot detection
+  </Card>
+  
+  <Card title="Premium Support" icon="headset">
+    Real support from the people who build Plausible
+  </Card>
+</CardGroup>
+
+### Cloud Installation Steps
+
+<Steps>
+  <Step title="Create Your Account">
+    Visit [plausible.io/register](https://plausible.io/register) and sign up for a free 30-day trial.
+    
+    No credit card required to start.
+  </Step>
+  
+  <Step title="Add Your Website">
+    Enter your domain name (e.g., `example.com`) and configure your timezone.
+  </Step>
+  
+  <Step title="Install the Tracking Script">
+    Choose your installation method:
+    
+    **For standard websites:**
+    ```html
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script async src="https://plausible.io/js/YOUR-SCRIPT-ID.js"></script>
+    <script>
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||};
+      plausible.init()
+    </script>
+    ```
+    
+    **For NPM/JavaScript apps:**
+    ```bash
+    npm install @plausible-analytics/tracker
+    ```
+    
+    ```javascript
+    import { init } from '@plausible-analytics/tracker'
+    
+    init({ domain: 'example.com' })
+    ```
+  </Step>
+  
+  <Step title="Verify and Start Tracking">
+    Visit your website to generate a test pageview, then check your Plausible dashboard.
+    
+    Your analytics are now live!
+  </Step>
+</Steps>
+
+### Cloud-Only Premium Features
+
+The following features are exclusive to Plausible Cloud:
+
+- **Marketing Funnels** - Visualize conversion paths and optimize your funnel
+- **Ecommerce Revenue Goals** - Track monetary value and ROI
+- **SSO (Single Sign-On)** - Enterprise authentication integration
+- **Sites API** - Programmatically manage multiple sites
+- **Priority Support** - Direct support from the Plausible team
+
+### Pricing
+
+Plausible Cloud uses volume-based pricing:
+
+- **Free trial**: 30 days, no credit card required
+- **Starting at**: $9/month for up to 10K monthly pageviews
+- **Scales with you**: Pay only for what you use
+
+View full pricing details at [plausible.io/pricing](https://plausible.io/#pricing)
+
+<Note>
+  **EU Data Residency** - All visitor data is exclusively processed on EU-owned cloud infrastructure in Germany, ensuring GDPR compliance. Your data never leaves the EU.
+</Note>
+
+---
+
+## Self-Hosted Community Edition
+
+Plausible Community Edition (CE) is our free, open-source, self-hosted version.
+
+### Why Self-Host?
+
+<CardGroup cols={2}>
+  <Card title="Full Control" icon="gears">
+    Host on your own infrastructure, anywhere in the world
+  </Card>
+  
+  <Card title="No Subscription" icon="hand-holding-dollar">
+    Free to use - only pay for your server costs
+  </Card>
+  
+  <Card title="Direct Database Access" icon="database">
+    Query ClickHouse directly for raw analytics data
+  </Card>
+  
+  <Card title="Open Source" icon="code-branch">
+    AGPLv3 licensed - inspect, modify, and contribute to the code
+  </Card>
+</CardGroup>
+
+### Community Edition Differences
+
+<Warning>
+  Community Edition has some important differences from Cloud:
+</Warning>
+
+| Feature | Cloud | Community Edition |
+|---------|-------|------------------|
+| **Release Schedule** | Multiple updates per week | Twice per year (LTS releases) |
+| **Bot Filtering** | Advanced (32K+ IP ranges) | Basic (User-Agent only) |
+| **Premium Features** | ✅ All included | ❌ Not available |
+| **Support** | Premium support team | Community forum only |
+| **Infrastructure** | Fully managed | You manage everything |
+
+### Self-Hosting Requirements
+
+<Note>
+  Self-hosting requires technical expertise in Docker, databases, and server administration.
+</Note>
+
+**Minimum System Requirements:**
+
+- **CPU**: 2+ cores recommended
+- **RAM**: 4GB minimum (8GB+ recommended for production)
+- **Disk**: 20GB+ (grows with data retention)
+- **Docker**: Version 20.10 or newer
+- **Docker Compose**: Version 2.0 or newer
+
+**Technology Stack:**
+
+- Elixir/Phoenix application
+- PostgreSQL database (general data)
+- ClickHouse database (analytics data)
+- Node.js (for asset compilation)
+
+### Self-Hosted Installation
+
+<Steps>
+  <Step title="Clone the Repository">
+    ```bash
+    git clone https://github.com/plausible/community-edition.git
+    cd community-edition
+    ```
+  </Step>
+  
+  <Step title="Configure Environment Variables">
+    Copy the example configuration and customize it:
+    
+    ```bash
+    cp plausible-conf.env.example plausible-conf.env
+    ```
+    
+    Edit `plausible-conf.env` and set required variables:
+    
+    ```bash
+    # Your domain where Plausible will be hosted
+    BASE_URL=https://analytics.yourdomain.com
+    
+    # Generate a random secret key
+    SECRET_KEY_BASE=your-secret-key-here
+    
+    # Database configuration (defaults are usually fine)
+    # POSTGRES_PASSWORD=postgres
+    # CLICKHOUSE_PASSWORD=clickhouse
+    ```
+    
+    <Warning>
+      Generate a secure `SECRET_KEY_BASE` using: `openssl rand -base64 64`
+    </Warning>
+  </Step>
+  
+  <Step title="Start the Services">
+    Use Docker Compose to start all services:
+    
+    ```bash
+    docker compose up -d
+    ```
+    
+    This will start:
+    - Plausible application server
+    - PostgreSQL database
+    - ClickHouse analytics database
+    - Mail server (for notifications)
+  </Step>
+  
+  <Step title="Create Your Admin Account">
+    Visit your Plausible instance (e.g., `http://localhost:8000` or your configured domain).
+    
+    Register your admin account and add your first website.
+  </Step>
+  
+  <Step title="Configure Reverse Proxy (Production)">
+    For production deployments, configure a reverse proxy (nginx, Caddy, Traefik) with SSL:
+    
+    **Example nginx configuration:**
+    ```nginx
+    server {
+        listen 443 ssl http2;
+        server_name analytics.yourdomain.com;
+        
+        ssl_certificate /path/to/cert.pem;
+        ssl_certificate_key /path/to/key.pem;
+        
+        location / {
+            proxy_pass http://localhost:8000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+    ```
+  </Step>
+  
+  <Step title="Install Tracking Script">
+    Update the tracking script to point to your self-hosted instance:
+    
+    ```html
+    <script async src="https://analytics.yourdomain.com/js/script.js"></script>
+    <script>
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||};
+      plausible.init()
+    </script>
+    ```
+    
+    For the NPM package:
+    ```javascript
+    init({
+      domain: 'mywebsite.com',
+      endpoint: 'https://analytics.yourdomain.com/api/event'
+    })
+    ```
+  </Step>
+</Steps>
+
+### Updating Community Edition
+
+<Warning>
+  Community Edition releases are published twice per year. Always backup your data before upgrading.
+</Warning>
+
+<Steps>
+  <Step title="Backup Your Data">
+    ```bash
+    # Backup PostgreSQL
+    docker compose exec postgres pg_dump -U postgres plausible_db > backup.sql
+    
+    # Backup ClickHouse (optional - can be regenerated)
+    docker compose exec clickhouse clickhouse-client --query "BACKUP DATABASE plausible_events_db"
+    ```
+  </Step>
+  
+  <Step title="Pull Latest Changes">
+    ```bash
+    git pull origin master
+    ```
+  </Step>
+  
+  <Step title="Rebuild and Restart">
+    ```bash
+    docker compose down
+    docker compose up -d --build
+    ```
+  </Step>
+  
+  <Step title="Run Migrations">
+    Migrations run automatically on startup. Check logs to verify:
+    
+    ```bash
+    docker compose logs -f plausible
+    ```
+  </Step>
+</Steps>
+
+### Self-Hosting Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Services won't start or keep crashing">
+    Check the logs for specific errors:
+    ```bash
+    docker compose logs -f
+    ```
+    
+    Common issues:
+    - Insufficient memory (increase Docker memory limit)
+    - Port conflicts (change ports in docker-compose.yml)
+    - Invalid SECRET_KEY_BASE (regenerate it)
+  </Accordion>
+  
+  <Accordion title="ClickHouse database errors">
+    ClickHouse requires significant memory. Ensure your host has at least 4GB RAM.
+    
+    If ClickHouse won't start:
+    ```bash
+    docker compose down -v  # WARNING: This deletes all data
+    docker compose up -d
+    ```
+  </Accordion>
+  
+  <Accordion title="Email notifications not working">
+    Configure SMTP settings in `plausible-conf.env`:
+    ```bash
+    MAILER_EMAIL=notifications@yourdomain.com
+    SMTP_HOST_ADDR=smtp.yourdomain.com
+    SMTP_HOST_PORT=587
+    SMTP_USER_NAME=your-smtp-username
+    SMTP_USER_PWD=your-smtp-password
+    SMTP_HOST_SSL_ENABLED=true
+    ```
+  </Accordion>
+  
+  <Accordion title="How do I import Google Analytics data?">
+    Google Analytics import is a Cloud-only feature. For CE, you'll need to:
+    
+    1. Export your GA data
+    2. Manually transform it to Plausible's schema
+    3. Import into ClickHouse directly
+    
+    This is complex and not officially supported. Consider using Cloud if GA import is critical.
+  </Accordion>
+</AccordionGroup>
+
+## Installation Methods Comparison
+
+### Script Installation (All Platforms)
+
+Best for: Static sites, traditional CMS, simple integrations
+
+**Pros:**
+- Simplest setup
+- Works everywhere
+- Automatic pageview tracking
+
+**Cons:**
+- May be blocked by ad blockers
+- Limited customization
+
+### NPM Package Installation
+
+Best for: React, Vue, Next.js, modern JavaScript frameworks
+
+**Installation:**
+```bash
+npm install @plausible-analytics/tracker
+```
+
+**Configuration:**
+```javascript
+import { init, track } from '@plausible-analytics/tracker'
+
+init({
+  domain: 'mywebsite.com',
+  endpoint: 'https://plausible.io/api/event',  // or your self-hosted URL
+  autoCapturePageviews: true,
+  hashBasedRouting: false,
+  outboundLinks: true,
+  fileDownloads: true,
+  formSubmissions: false,
+  captureOnLocalhost: false
+})
+
+// Track custom events
+track('Signup', { props: { plan: 'Pro' } })
+
+// Track revenue
+track('Purchase', { 
+  revenue: { amount: 29.99, currency: 'USD' }
+})
+```
+
+**Pros:**
+- Full TypeScript support
+- Programmatic control
+- Works with SSR frameworks
+- Custom event tracking built-in
+
+**Cons:**
+- Requires build step
+- Manual initialization needed
+
+<Warning>
+  **SSR Frameworks**: The tracker only works in browser environments. For Next.js, ensure init is called in a client component or `useEffect`.
+</Warning>
+
+### WordPress Plugin
+
+Best for: WordPress sites (obviously!)
+
+**Installation:**
+1. Install "Plausible Analytics" plugin from WordPress.org
+2. Activate and configure with your domain
+3. Done!
+
+**Pros:**
+- Zero code required
+- Automatic integration
+- WP-specific features
+
+**Cons:**
+- WordPress only
+
+### Google Tag Manager
+
+Best for: Sites already using GTM, enterprise setups
+
+**Installation:**
+1. Get your Script ID from Plausible
+2. Install the [Plausible GTM template](https://plausible.io/gtm-template)
+3. Configure with your Script ID
+
+**Pros:**
+- Integrate with existing GTM setup
+- No code changes needed
+- Conditional loading possible
+
+**Cons:**
+- Requires GTM knowledge
+- Extra dependency
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Follow our quick start guide to see your first pageview
+  </Card>
+  
+  <Card title="Track Custom Events" icon="bullseye">
+    Set up goals and custom event tracking
+  </Card>
+  
+  <Card title="API Documentation" icon="code">
+    Integrate Plausible with your applications
+  </Card>
+  
+  <Card title="Community Forum" icon="comments">
+    Get help from the Plausible community
+  </Card>
+</CardGroup>
+
+<Note>
+  **Need Help Choosing?** - For most users, **Plausible Cloud** is the best choice. It's hassle-free, always updated, and supports the project's development. Self-hosting is recommended only if you have specific compliance requirements or technical expertise.
+</Note>

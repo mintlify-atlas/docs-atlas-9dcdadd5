@@ -1,0 +1,230 @@
+---
+title: Update Site
+description: Update a site's domain or tracker script configuration
+---
+
+## PUT /api/v1/sites/:site_id
+
+Updates a site's domain and/or tracker script configuration. You can change the domain, update tracker settings, or both in a single request. Requires the `sites:provision:*` API scope and at least editor-level access to the site.
+
+<Warning>
+This endpoint is only available with a subscription that includes the Sites API feature.
+</Warning>
+
+### Authentication
+
+Requires a valid API key with the `sites:provision:*` scope passed in the `Authorization` header.
+
+### Path Parameters
+
+<ParamField path="site_id" type="string" required>
+  The domain of the site to update. Can be the current domain or the previous domain if it was changed.
+  
+  Examples: `example.com`, `blog.example.com`
+</ParamField>
+
+### Request Body
+
+<Info>
+At least one of `domain` or `tracker_script_configuration` must be provided.
+</Info>
+
+<ParamField body="domain" type="string">
+  The new domain for the site. Must be different from the current domain.
+  
+  The domain will be automatically normalized (lowercased, stripped of protocol/www prefix).
+  
+  <Warning>
+  Domain changes are tracked - the old domain is stored in `domain_changed_from` and you can still access the site using the old domain.
+  </Warning>
+</ParamField>
+
+<ParamField body="tracker_script_configuration" type="object">
+  Tracker script configuration settings to update. Only the fields you provide will be updated; other fields will retain their current values.
+  
+  <Expandable title="Tracker Script Configuration Fields">
+    <ParamField body="tracker_script_configuration.installation_type" type="string">
+      The installation method used. Valid values: `manual`, `wordpress`, or `null`.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.track_404_pages" type="boolean">
+      Enable tracking of 404 error pages.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.hash_based_routing" type="boolean">
+      Enable hash-based routing for single-page applications.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.outbound_links" type="boolean">
+      Enable automatic tracking of outbound link clicks.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.file_downloads" type="boolean">
+      Enable automatic tracking of file downloads.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.revenue_tracking" type="boolean">
+      Enable revenue tracking for goals.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.tagged_events" type="boolean">
+      Enable CSS class-based event tracking.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.form_submissions" type="boolean">
+      Enable automatic tracking of form submissions.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.pageview_props" type="boolean">
+      Enable custom properties on pageviews.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+<ResponseField name="domain" type="string">
+  The domain of the site (updated if changed).
+</ResponseField>
+
+<ResponseField name="timezone" type="string">
+  The timezone of the site.
+</ResponseField>
+
+<ResponseField name="custom_properties" type="array">
+  List of allowed custom event properties for the site.
+</ResponseField>
+
+<ResponseField name="tracker_script_configuration" type="object">
+  The complete tracker script configuration after the update.
+  
+  <Expandable title="Configuration Fields">
+    <ResponseField name="tracker_script_configuration.id" type="string">
+      The unique identifier for this configuration.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.installation_type" type="string">
+      The installation method.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.track_404_pages" type="boolean">
+      Whether 404 tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.hash_based_routing" type="boolean">
+      Whether hash-based routing is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.outbound_links" type="boolean">
+      Whether outbound link tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.file_downloads" type="boolean">
+      Whether file download tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.revenue_tracking" type="boolean">
+      Whether revenue tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.tagged_events" type="boolean">
+      Whether CSS class-based event tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.form_submissions" type="boolean">
+      Whether form submission tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.pageview_props" type="boolean">
+      Whether pageview properties are enabled.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<CodeGroup>
+```bash Change Domain
+curl -X PUT https://plausible.io/api/v1/sites/example.com \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "domain": "new-example.com"
+  }'
+```
+
+```bash Update Tracker Configuration
+curl -X PUT https://plausible.io/api/v1/sites/example.com \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tracker_script_configuration": {
+      "outbound_links": true,
+      "file_downloads": true
+    }
+  }'
+```
+
+```bash Change Domain and Update Tracker
+curl -X PUT https://plausible.io/api/v1/sites/example.com \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "domain": "new-example.com",
+    "tracker_script_configuration": {
+      "installation_type": "wordpress",
+      "form_submissions": true
+    }
+  }'
+```
+
+```json 200 Response
+{
+  "domain": "new-example.com",
+  "timezone": "Etc/UTC",
+  "custom_properties": [],
+  "tracker_script_configuration": {
+    "id": "abc123",
+    "installation_type": "wordpress",
+    "track_404_pages": false,
+    "hash_based_routing": false,
+    "outbound_links": false,
+    "file_downloads": false,
+    "revenue_tracking": false,
+    "tagged_events": false,
+    "form_submissions": true,
+    "pageview_props": false
+  }
+}
+```
+
+```json 400 Error - No Changes
+{
+  "error": "Payload must contain at least one of the parameters 'domain', 'tracker_script_configuration'"
+}
+```
+
+```json 400 Error - Same Domain
+{
+  "error": "domain: New domain must be different than the current one"
+}
+```
+
+```json 400 Error - Invalid Configuration
+{
+  "error": "tracker_script_configuration.installation_type: is invalid"
+}
+```
+
+```json 404 Error - Site Not Found
+{
+  "error": "Site could not be found"
+}
+```
+</CodeGroup>
+
+## Notes
+
+- Domain changes and tracker configuration updates are performed as a transaction - if one fails, both are rolled back
+- You must have at least editor-level access to update a site (owner, admin, or editor role)
+- When updating tracker configuration, only the fields you specify are changed - all other fields keep their existing values
+- Consolidated views cannot be updated via this API
+- The old domain is preserved in the database and can still be used to access the site after a domain change

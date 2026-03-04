@@ -1,0 +1,353 @@
+---
+title: Installation Guide
+description: Step-by-step instructions for installing Plausible Analytics Community Edition using Docker
+---
+
+## Prerequisites
+
+Before installing Plausible CE, ensure you have:
+
+<CardGroup cols={2}>
+  <Card title="Docker" icon="docker">
+    Docker Engine 20.10.0 or higher
+  </Card>
+  <Card title="Docker Compose" icon="layer-group">
+    Docker Compose v2.0.0 or higher
+  </Card>
+  <Card title="Domain Name" icon="globe">
+    A domain pointing to your server (for HTTPS)
+  </Card>
+  <Card title="Server Access" icon="server">
+    SSH access with root or sudo privileges
+  </Card>
+</CardGroup>
+
+## Quick Start with Docker
+
+The recommended way to run Plausible CE is using the official Docker image with the Community Edition hosting repository.
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/plausible/community-edition
+cd community-edition
+```
+
+### Step 2: Generate Secret Keys
+
+Plausible requires a secret key base for security. Generate one using:
+
+```bash
+openssl rand -base64 64
+```
+
+<Note>
+  Save this key securely - you'll need it for the configuration file.
+</Note>
+
+### Step 3: Configure Environment Variables
+
+Create a configuration file:
+
+```bash
+cp plausible-conf.env.example plausible-conf.env
+```
+
+Edit `plausible-conf.env` with your settings:
+
+```bash plausible-conf.env
+# Required: Your domain name
+BASE_URL=https://analytics.yourdomain.com
+
+# Required: Secret key base (minimum 32 bytes)
+SECRET_KEY_BASE=your-generated-secret-key-here
+
+# Database URLs (defaults work with docker-compose)
+DATABASE_URL=postgres://postgres:postgres@plausible_db:5432/plausible_db
+CLICKHOUSE_DATABASE_URL=http://plausible_events_db:8123/plausible_events_db
+```
+
+<Warning>
+  Never commit `plausible-conf.env` to version control - it contains sensitive credentials.
+</Warning>
+
+### Step 4: Start the Services
+
+<Steps>
+  <Step title="Start Docker Compose">
+    Launch all services in detached mode:
+    
+    ```bash
+    docker compose up -d
+    ```
+    
+    This starts:
+    - Plausible web application
+    - PostgreSQL database
+    - ClickHouse database
+    - Mail server (optional)
+  </Step>
+
+  <Step title="Create Database">
+    Initialize the database schema:
+    
+    ```bash
+    docker compose exec plausible sh -c "/app/createdb.sh"
+    ```
+  </Step>
+
+  <Step title="Run Migrations">
+    Apply database migrations:
+    
+    ```bash
+    docker compose exec plausible sh -c "/app/migrate.sh"
+    ```
+  </Step>
+
+  <Step title="Verify Installation">
+    Check that all containers are running:
+    
+    ```bash
+    docker compose ps
+    ```
+    
+    All services should show as "running" or "healthy".
+  </Step>
+</Steps>
+
+### Step 5: Access Your Instance
+
+Open your browser and navigate to your configured `BASE_URL`. You should see the Plausible registration page.
+
+<Info>
+  By default, Community Edition only allows registration via invite. The first user can register directly on initial setup.
+</Info>
+
+## Docker Image Details
+
+The official Plausible CE Docker image is built from Alpine Linux:
+
+```dockerfile
+FROM alpine:3.22.2
+
+# Application runs as non-root user (UID 999)
+USER 999
+
+# Default ports
+EXPOSE 8000
+
+# Default data directory
+VOLUME /var/lib/plausible
+
+# Entry point
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["run"]
+```
+
+### Image Features
+
+- **Base Image**: Alpine Linux 3.22.2
+- **Runtime**: Elixir 1.19.4 / Erlang 27.3.4.6
+- **Build Environment**: MIX_ENV=ce
+- **Security**: Runs as non-root user
+- **Size**: Optimized for minimal footprint
+
+## Advanced Installation Options
+
+### Custom Port Configuration
+
+<CodeGroup>
+```bash HTTP Only
+# In plausible-conf.env
+HTTP_PORT=8000
+LISTEN_IP=0.0.0.0
+```
+
+```bash HTTPS with Auto TLS
+# In plausible-conf.env
+HTTP_PORT=80
+HTTPS_PORT=443
+LISTEN_IP=0.0.0.0
+
+# Automatic TLS certificate management
+# Requires domain to resolve to server IP
+```
+</CodeGroup>
+
+### IPv6 Support
+
+To enable IPv6:
+
+```bash
+# In plausible-conf.env
+LISTEN_IP=::
+```
+
+<Note>
+  TCP connections automatically try IPv6 first with IPv4 fallback in CE.
+</Note>
+
+### Running with Arbitrary UID
+
+The container supports running with custom UIDs:
+
+```bash
+docker run --user 1000:1000 plausible/analytics:latest
+```
+
+## Database Setup
+
+### PostgreSQL Configuration
+
+The default configuration uses:
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@plausible_db:5432/plausible_db
+```
+
+For production, consider:
+
+<CodeGroup>
+```bash Standard Connection
+DATABASE_URL=postgres://username:password@hostname:5432/database_name
+```
+
+```bash With SSL
+DATABASE_URL=postgres://username:password@hostname:5432/database_name?sslmode=require
+```
+
+```bash Unix Socket
+DATABASE_URL=postgresql:///plausible_db?host=/var/run/postgresql
+```
+</CodeGroup>
+
+### ClickHouse Configuration
+
+Default ClickHouse connection:
+
+```bash
+CLICKHOUSE_DATABASE_URL=http://plausible_events_db:8123/plausible_events_db
+```
+
+<Accordion title="ClickHouse Performance Tuning">
+  ```bash
+  # Adjust buffer settings for high-traffic sites
+  CLICKHOUSE_FLUSH_INTERVAL_MS=5000
+  CLICKHOUSE_MAX_BUFFER_SIZE_BYTES=100000
+  CLICKHOUSE_INGEST_POOL_SIZE=5
+  ```
+</Accordion>
+
+## Reverse Proxy Setup
+
+For production deployments, use a reverse proxy like Nginx or Caddy:
+
+### Nginx Configuration
+
+```nginx
+server {
+    listen 80;
+    server_name analytics.yourdomain.com;
+    
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### Caddy Configuration
+
+```caddy
+analytics.yourdomain.com {
+    reverse_proxy localhost:8000
+}
+```
+
+## Geolocation Database
+
+Plausible includes a basic country-level geolocation database. For city-level data:
+
+<Steps>
+  <Step title="Get MaxMind License">
+    Sign up for a free MaxMind GeoLite2 account at https://www.maxmind.com
+  </Step>
+
+  <Step title="Configure License Key">
+    ```bash
+    # In plausible-conf.env
+    MAXMIND_LICENSE_KEY=your_license_key_here
+    MAXMIND_EDITION=GeoLite2-City
+    ```
+  </Step>
+
+  <Step title="Restart Plausible">
+    ```bash
+    docker compose restart plausible
+    ```
+    
+    Plausible will automatically download and update the GeoLite2 database.
+  </Step>
+</Steps>
+
+## Verification
+
+After installation, verify your setup:
+
+<Checklist>
+  - [ ] All Docker containers are running (`docker compose ps`)
+  - [ ] Web interface accessible at BASE_URL
+  - [ ] Can register/login successfully
+  - [ ] Can create a new site
+  - [ ] Tracking script loads without errors
+  - [ ] Test pageview appears in dashboard
+</Checklist>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Container won't start">
+    Check logs for specific errors:
+    ```bash
+    docker compose logs plausible
+    ```
+    
+    Common issues:
+    - Missing or invalid `SECRET_KEY_BASE`
+    - Invalid `BASE_URL` format
+    - Database connection failures
+  </Accordion>
+
+  <Accordion title="Database connection errors">
+    Verify database containers are healthy:
+    ```bash
+    docker compose ps
+    docker compose logs plausible_db
+    docker compose logs plausible_events_db
+    ```
+    
+    Ensure databases are ready before starting Plausible.
+  </Accordion>
+
+  <Accordion title="Cannot access web interface">
+    Check:
+    - Firewall rules allow traffic on configured port
+    - `LISTEN_IP` is set to `0.0.0.0` or `::`
+    - BASE_URL matches your access URL
+    - Reverse proxy configuration is correct
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/self-hosting/configuration">
+    Configure email, integrations, and advanced options
+  </Card>
+  <Card title="Maintenance" icon="wrench" href="/self-hosting/maintenance">
+    Learn about backups and monitoring
+  </Card>
+</CardGroup>

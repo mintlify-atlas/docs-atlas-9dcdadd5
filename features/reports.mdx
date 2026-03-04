@@ -1,0 +1,461 @@
+---
+title: Reports & Exports
+description: Export your analytics data, create custom reports, and schedule automated email summaries of your website performance.
+---
+
+Plausible provides flexible reporting and data export options to help you share insights, analyze trends, and integrate analytics data with other tools.
+
+## Export Formats
+
+Export your analytics data in multiple formats:
+
+<CardGroup cols={2}>
+  <Card title="CSV Export" icon="file-csv">
+    Download any dashboard view as CSV for spreadsheet analysis
+  </Card>
+  <Card title="Stats API" icon="code">
+    Programmatic access to all metrics and breakdowns
+  </Card>
+  <Card title="Email Reports" icon="envelope">
+    Scheduled reports delivered to your inbox
+  </Card>
+  <Card title="Shared Links" icon="link">
+    Public or password-protected dashboard access
+  </Card>
+</CardGroup>
+
+## CSV Exports
+
+Download your analytics data for offline analysis:
+
+### Exporting Data
+
+<Steps>
+  <Step title="Configure Your View">
+    Set up the dashboard view you want to export:
+    - Select date range
+    - Apply filters
+    - Choose metrics
+    - Apply segments
+  </Step>
+  
+  <Step title="Click Export">
+    Click the "Export" or "Download CSV" button in your dashboard.
+  </Step>
+  
+  <Step title="Choose Data">
+    Select what to export:
+    - Top pages
+    - Traffic sources
+    - Geographic data
+    - Device statistics
+    - Goal conversions
+    - Custom breakdowns
+  </Step>
+  
+  <Step title="Download File">
+    Your CSV file downloads immediately, ready for use in:
+    - Excel or Google Sheets
+    - Data analysis tools
+    - Business intelligence platforms
+    - Custom reporting systems
+  </Step>
+</Steps>
+
+### CSV Data Structure
+
+Exported files include:
+
+```csv
+date,visitors,pageviews,bounce_rate,visit_duration
+2024-03-01,1523,4891,42.5,156
+2024-03-02,1687,5234,39.8,168
+2024-03-03,1456,4567,45.2,142
+```
+
+<Info>
+CSV exports respect all applied filters and date ranges, giving you exactly the data you see on your dashboard.
+</Info>
+
+### What You Can Export
+
+**Aggregate Metrics:**
+- Visitors, visits, pageviews
+- Bounce rate, visit duration
+- Views per visit
+- Conversion rates
+- Revenue metrics (Business plan)
+
+**Breakdown Data:**
+- Top pages with metrics
+- Traffic sources with conversion data
+- Geographic breakdown (country, city, region)
+- Device, browser, OS statistics
+- Entry and exit pages
+- UTM campaign performance
+
+**Time Series:**
+- Daily, weekly, or monthly trends
+- Hour-by-hour data for shorter ranges
+- Historical comparisons
+
+## Email Reports
+
+Receive automated analytics summaries via email:
+
+### Report Types
+
+<Accordion title="Weekly Reports">
+Every Monday, receive a summary of the previous week:
+- Total visitors
+- Pageviews
+- Top pages
+- Top sources
+- Comparison with previous week
+</Accordion>
+
+<Accordion title="Monthly Reports">
+First day of each month, get the previous month's performance:
+- Monthly visitor trends
+- Best performing content
+- Traffic source breakdown
+- Month-over-month comparison
+</Accordion>
+
+### Configuring Email Reports
+
+<Steps>
+  <Step title="Go to Site Settings">
+    Navigate to your site settings page.
+  </Step>
+  
+  <Step title="Email Reports Section">
+    Find the "Email Reports" or "Weekly/Monthly Reports" section.
+  </Step>
+  
+  <Step title="Enable Reports">
+    Toggle on the reports you want:
+    - Weekly report
+    - Monthly report
+    - Both
+  </Step>
+  
+  <Step title="Add Recipients">
+    Enter email addresses for report recipients (team members or stakeholders).
+  </Step>
+</Steps>
+
+### Email Report Content
+
+Reports include:
+
+**Summary Metrics:**
+- Unique visitors
+- Total pageviews  
+- Bounce rate
+- Visit duration
+- Percentage change from previous period
+
+**Top Performers:**
+- Most visited pages (top 5)
+- Best traffic sources (top 5)
+- Top countries (top 3)
+
+**Visual Elements:**
+- Traffic trend graph
+- Key metric comparisons
+- Up/down indicators
+
+<Note>
+Email reports are sent to all configured recipients. Team members can opt out individually from their user preferences.
+</Note>
+
+## Shared Links
+
+Create shareable dashboard links for stakeholders:
+
+### Creating Shared Links
+
+<Steps>
+  <Step title="Navigate to Shared Links">
+    Go to Site Settings → Shared Links.
+  </Step>
+  
+  <Step title="Create New Link">
+    Click "New Link" to create a shared dashboard:
+    - **Name**: Descriptive name for the link
+    - **Password**: Optional password protection
+    - **Segment**: Apply a segment filter (optional)
+  </Step>
+  
+  <Step title="Copy Link">
+    Copy the generated URL and share with:
+    - Clients
+    - Team members without accounts
+    - Stakeholders
+    - Partners
+  </Step>
+</Steps>
+
+### Shared Link Options
+
+**Public Links:**
+- No password required
+- Anyone with the URL can view
+- Useful for transparent reporting
+- Can be indexed by search engines if not careful
+
+**Password Protected:**
+- Require password to access
+- Additional security layer
+- Share password separately
+- Suitable for sensitive data
+
+**Segment Filtering:**
+- Apply saved segment to shared view
+- Limit what data is visible
+- Create focused reports for specific stakeholders
+
+<Warning>
+Shared links provide read-only access to your analytics. Recipients cannot modify settings, but they can see all data within the shared view.
+</Warning>
+
+### Managing Shared Links
+
+- **Edit**: Change name, password, or segment
+- **Revoke**: Disable link immediately
+- **Regenerate**: Create new URL if compromised
+- **Track Usage**: See when links were last accessed
+
+## Stats API
+
+Programmatic access to all your analytics data:
+
+### API Capabilities
+
+The Stats API provides:
+
+- **Aggregate Metrics**: Get overall statistics for any period
+- **Time Series**: Retrieve trends over time
+- **Breakdowns**: Drill down by any dimension
+- **Real-time**: Access current visitor data
+- **Custom Queries**: Combine filters, metrics, and dimensions
+
+### Example API Calls
+
+**Get aggregate stats:**
+
+```bash
+curl https://plausible.io/api/v2/query \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "site_id": "yourdomain.com",
+    "metrics": ["visitors", "pageviews", "bounce_rate"],
+    "date_range": ["2024-03-01", "2024-03-31"]
+  }'
+```
+
+**Get breakdown by source:**
+
+```bash
+curl https://plausible.io/api/v2/query \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "site_id": "yourdomain.com",
+    "metrics": ["visitors", "visits"],
+    "date_range": "last_30_days",
+    "dimensions": ["visit:source"]
+  }'
+```
+
+<Info>
+The Stats API uses your same analytics data with no sampling. Perfect for building custom dashboards, integrations, or automated reporting.
+</Info>
+
+### API Authentication
+
+Secure your API access:
+
+1. Generate API key in account settings
+2. Include in Authorization header
+3. Keep key secure (never commit to code)
+4. Rotate keys periodically
+
+### Rate Limits
+
+API requests are rate-limited:
+- **Standard**: 600 requests per hour
+- **Spike tolerance**: Short bursts allowed
+- **429 errors**: Wait before retrying
+
+## Custom Reporting Solutions
+
+Build custom reports using Plausible data:
+
+### Data Warehouse Integration
+
+Export data to your data warehouse:
+
+<Steps>
+  <Step title="Schedule API Calls">
+    Set up automated scripts to fetch data daily/weekly.
+  </Step>
+  
+  <Step title="Transform Data">
+    Process API responses into your warehouse schema.
+  </Step>
+  
+  <Step title="Join with Other Data">
+    Combine Plausible analytics with:
+    - CRM data
+    - Sales information
+    - Product metrics
+    - Customer data
+  </Step>
+  
+  <Step title="Create Reports">
+    Build comprehensive reports across all your data sources.
+  </Step>
+</Steps>
+
+### Business Intelligence Tools
+
+Connect Plausible to BI platforms:
+
+- **Google Data Studio**: Create custom dashboards
+- **Tableau**: Build visual analytics
+- **Power BI**: Enterprise reporting
+- **Metabase**: Open-source analytics
+
+### Automated Alerts
+
+Build alert systems:
+
+```python
+# Example: Alert on traffic drop
+import requests
+
+response = requests.post(
+    'https://plausible.io/api/v2/query',
+    headers={'Authorization': 'Bearer YOUR_KEY'},
+    json={
+        'site_id': 'yourdomain.com',
+        'metrics': ['visitors'],
+        'date_range': 'day',
+        'compare': 'previous_period'
+    }
+)
+
+data = response.json()
+if data['results'][0]['change'] < -20:  # 20% drop
+    send_alert('Traffic dropped significantly!')
+```
+
+## Report Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Regular Cadence" icon="calendar">
+    Establish consistent reporting schedule (weekly or monthly).
+  </Card>
+  <Card title="Relevant Metrics" icon="bullseye">
+    Focus on metrics that matter to your stakeholders.
+  </Card>
+  <Card title="Context Matters" icon="comment">
+    Include comparison periods and explain changes.
+  </Card>
+  <Card title="Secure Sharing" icon="lock">
+    Use password protection for sensitive data.
+  </Card>
+</CardGroup>
+
+## Data Ownership
+
+Your data belongs to you:
+
+- **Export Anytime**: Download all your data whenever needed
+- **No Lock-in**: Full data portability
+- **API Access**: Programmatic access to all metrics
+- **Data Deletion**: Request complete data removal
+
+## Privacy in Reports
+
+Reporting respects privacy:
+
+- No personal data exposed in exports
+- Aggregated statistics only
+- No individual visitor tracking
+- GDPR-compliant data handling
+
+## Advanced Export Options
+
+### Filtered Exports
+
+Export specific subsets:
+
+- Apply filters before exporting
+- Use segments for consistent exports
+- Combine multiple filters
+- Save export configurations
+
+### Comparison Exports
+
+Include comparison data:
+
+- Period-over-period changes
+- Year-over-year trends
+- Percentage changes
+- Absolute differences
+
+### Scheduled Exports
+
+Automate data exports:
+
+- Use API with cron jobs
+- Schedule daily/weekly exports
+- Store in cloud storage
+- Feed into other systems
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="CSV export incomplete">
+    - Large exports may be truncated
+    - Use API for complete data sets
+    - Split exports by date range
+    - Contact support for very large exports
+  </Accordion>
+  
+  <Accordion title="Email reports not arriving">
+    - Check spam folder
+    - Verify email address is correct
+    - Confirm reports are enabled
+    - Check team member preferences
+  </Accordion>
+  
+  <Accordion title="Shared link not working">
+    - Verify link hasn't been revoked
+    - Check password if protected
+    - Clear browser cache
+    - Try incognito/private mode
+  </Accordion>
+  
+  <Accordion title="API rate limit errors">
+    - Reduce request frequency
+    - Implement exponential backoff
+    - Cache responses when appropriate
+    - Contact support for higher limits
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Stats API Documentation" icon="code" href="/api-reference">
+    Explore the full API capabilities
+  </Card>
+  <Card title="Dashboard" icon="chart-line" href="/features/dashboard">
+    View your analytics dashboard
+  </Card>
+</CardGroup>

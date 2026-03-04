@@ -1,0 +1,518 @@
+---
+title: Create Goal
+description: Create or retrieve goals for tracking conversions in Plausible Analytics via the Plugins API
+---
+
+## Endpoint
+
+```
+PUT /api/plugins/v1/goals
+```
+
+Creates a new goal or returns an existing goal if it already exists (upsert behavior). Goals are used to track conversions for custom events or pageviews.
+
+## Authentication
+
+Requires a Plugins API token with write access.
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+  
+  ```
+  Authorization: Bearer YOUR_API_TOKEN
+  ```
+</ParamField>
+
+## Request Body
+
+The request body accepts either a single goal or multiple goals (for bulk creation).
+
+### Single Goal Creation
+
+<ParamField body="goal_type" type="string" required>
+  Type of goal to create
+  
+  **Options:**
+  - `Goal.CustomEvent` - Track custom events
+  - `Goal.Pageview` - Track pageview conversions
+  - `Goal.Revenue` - Track revenue goals (requires Business plan)
+</ParamField>
+
+<ParamField body="goal" type="object" required>
+  Goal configuration object (structure varies by goal_type)
+</ParamField>
+
+### Custom Event Goal
+
+<ParamField body="goal.event_name" type="string" required>
+  Name of the custom event to track
+  
+  **Requirements:**
+  - Maximum length: 120 characters
+  - Cannot be `engagement` (reserved)
+  - Will be trimmed of leading/trailing whitespace
+  
+  **Examples:** `Signup`, `Purchase`, `Download`
+</ParamField>
+
+<ParamField body="goal.custom_props" type="object">
+  Custom properties filter for the goal (up to 3 properties)
+  
+  **Requirements:**
+  - Maximum 3 properties per goal
+  - Keys: 1-300 characters
+  - Values: 1-2000 characters
+  - Both keys and values must be strings
+  
+  **Example:**
+  ```json
+  {
+    "plan": "premium"
+  }
+  ```
+</ParamField>
+
+### Pageview Goal
+
+<ParamField body="goal.path" type="string" required>
+  Page path to track as a goal
+  
+  **Requirements:**
+  - Must start with `/`
+  - Will be trimmed of leading/trailing whitespace
+  - Leading slash is automatically added if missing
+  
+  **Examples:** `/pricing`, `/blog/*`, `/thank-you`
+</ParamField>
+
+<ParamField body="goal.custom_props" type="object">
+  Custom properties filter for the goal (up to 3 properties)
+</ParamField>
+
+### Revenue Goal (Business Plan)
+
+<ParamField body="goal.event_name" type="string" required>
+  Name of the revenue event to track
+</ParamField>
+
+<ParamField body="goal.currency" type="string" required>
+  Currency code for revenue tracking
+  
+  **Requirements:**
+  - Must be a valid ISO 4217 currency code
+  - Cannot be changed once the goal is created
+  - Each event name can only have one currency
+  
+  **Examples:** `USD`, `EUR`, `GBP`
+</ParamField>
+
+<ParamField body="goal.custom_props" type="object">
+  Custom properties filter for the goal (up to 3 properties)
+</ParamField>
+
+### Bulk Goal Creation
+
+<ParamField body="goals" type="array">
+  Array of goal objects (maximum 8 goals)
+  
+  Each goal object follows the same structure as single goal creation.
+</ParamField>
+
+## Response
+
+<ResponseField name="goals" type="array">
+  Array of created or retrieved goals
+</ResponseField>
+
+<ResponseField name="goals[].goal_type" type="string">
+  Type of goal: `Goal.CustomEvent`, `Goal.Pageview`, or `Goal.Revenue`
+</ResponseField>
+
+<ResponseField name="goals[].goal.id" type="integer">
+  Unique identifier for the goal
+</ResponseField>
+
+<ResponseField name="goals[].goal.display_name" type="string">
+  Human-readable display name for the goal
+  
+  - For custom events: same as event_name
+  - For pageviews: "Visit {path}"
+</ResponseField>
+
+<ResponseField name="goals[].goal.event_name" type="string">
+  Event name (for custom event and revenue goals)
+</ResponseField>
+
+<ResponseField name="goals[].goal.path" type="string">
+  Page path (for pageview goals)
+</ResponseField>
+
+<ResponseField name="goals[].goal.currency" type="string">
+  Currency code (for revenue goals)
+</ResponseField>
+
+<ResponseField name="goals[].goal.custom_props" type="object">
+  Custom properties filter configuration
+</ResponseField>
+
+## Status Codes
+
+- `201 Created` - Goal(s) created or retrieved successfully
+- `400 Bad Request` - Invalid request parameters
+- `401 Unauthorized` - Missing or invalid API token
+- `402 Payment Required` - Revenue goals require Business plan upgrade
+- `422 Unprocessable Entity` - Validation error
+
+## Examples
+
+### Create Custom Event Goal
+
+<CodeGroup>
+
+```bash cURL
+curl -X PUT https://plausible.io/api/plugins/v1/goals \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goal_type": "Goal.CustomEvent",
+    "goal": {
+      "event_name": "Signup"
+    }
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://plausible.io/api/plugins/v1/goals', {
+  method: 'PUT',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    goal_type: 'Goal.CustomEvent',
+    goal: {
+      event_name: 'Signup'
+    }
+  })
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.put(
+    'https://plausible.io/api/plugins/v1/goals',
+    headers={
+        'Authorization': 'Bearer YOUR_API_TOKEN',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'goal_type': 'Goal.CustomEvent',
+        'goal': {
+            'event_name': 'Signup'
+        }
+    }
+)
+
+print(response.json())
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "goals": [
+    {
+      "goal_type": "Goal.CustomEvent",
+      "goal": {
+        "id": 123,
+        "display_name": "Signup",
+        "event_name": "Signup",
+        "custom_props": {}
+      }
+    }
+  ]
+}
+```
+
+### Create Pageview Goal
+
+<CodeGroup>
+
+```bash cURL
+curl -X PUT https://plausible.io/api/plugins/v1/goals \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goal_type": "Goal.Pageview",
+    "goal": {
+      "path": "/thank-you"
+    }
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://plausible.io/api/plugins/v1/goals', {
+  method: 'PUT',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    goal_type: 'Goal.Pageview',
+    goal: {
+      path: '/thank-you'
+    }
+  })
+});
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "goals": [
+    {
+      "goal_type": "Goal.Pageview",
+      "goal": {
+        "id": 124,
+        "display_name": "Visit /thank-you",
+        "path": "/thank-you",
+        "custom_props": {}
+      }
+    }
+  ]
+}
+```
+
+### Create Goal with Custom Properties
+
+<CodeGroup>
+
+```bash cURL
+curl -X PUT https://plausible.io/api/plugins/v1/goals \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goal_type": "Goal.CustomEvent",
+    "goal": {
+      "event_name": "Purchase",
+      "custom_props": {
+        "plan": "premium"
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://plausible.io/api/plugins/v1/goals', {
+  method: 'PUT',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    goal_type: 'Goal.CustomEvent',
+    goal: {
+      event_name: 'Purchase',
+      custom_props: {
+        plan: 'premium'
+      }
+    }
+  })
+});
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "goals": [
+    {
+      "goal_type": "Goal.CustomEvent",
+      "goal": {
+        "id": 125,
+        "display_name": "Purchase",
+        "event_name": "Purchase",
+        "custom_props": {
+          "plan": "premium"
+        }
+      }
+    }
+  ]
+}
+```
+
+### Create Revenue Goal (Business Plan)
+
+<CodeGroup>
+
+```bash cURL
+curl -X PUT https://plausible.io/api/plugins/v1/goals \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goal_type": "Goal.Revenue",
+    "goal": {
+      "event_name": "Purchase",
+      "currency": "USD"
+    }
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://plausible.io/api/plugins/v1/goals', {
+  method: 'PUT',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    goal_type: 'Goal.Revenue',
+    goal: {
+      event_name: 'Purchase',
+      currency: 'USD'
+    }
+  })
+});
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "goals": [
+    {
+      "goal_type": "Goal.Revenue",
+      "goal": {
+        "id": 126,
+        "display_name": "Purchase",
+        "event_name": "Purchase",
+        "currency": "USD",
+        "custom_props": {}
+      }
+    }
+  ]
+}
+```
+
+### Bulk Create Goals
+
+<CodeGroup>
+
+```bash cURL
+curl -X PUT https://plausible.io/api/plugins/v1/goals \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goals": [
+      {
+        "goal_type": "Goal.CustomEvent",
+        "goal": {
+          "event_name": "Signup"
+        }
+      },
+      {
+        "goal_type": "Goal.Pageview",
+        "goal": {
+          "path": "/pricing"
+        }
+      }
+    ]
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://plausible.io/api/plugins/v1/goals', {
+  method: 'PUT',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    goals: [
+      {
+        goal_type: 'Goal.CustomEvent',
+        goal: { event_name: 'Signup' }
+      },
+      {
+        goal_type: 'Goal.Pageview',
+        goal: { path: '/pricing' }
+      }
+    ]
+  })
+});
+```
+
+</CodeGroup>
+
+## Error Responses
+
+### Validation Error
+
+```json
+{
+  "errors": {
+    "event_name": ["can't be blank"],
+    "currency": ["is invalid"]
+  }
+}
+```
+
+### Maximum Goals Reached
+
+```json
+{
+  "errors": {
+    "event_name": ["Maximum number of goals reached"]
+  }
+}
+```
+
+**Note:** Each site can have a maximum of 1,000 goals.
+
+### Upgrade Required (Revenue Goals)
+
+```json
+{
+  "error": "Revenue Goals is part of the Plausible Business plan. To get access to this feature, please upgrade your account."
+}
+```
+
+### Currency Mismatch
+
+```json
+{
+  "errors": {
+    "event_name": ["'Purchase' (with currency: EUR) has already been taken"]
+  }
+}
+```
+
+This error occurs when trying to create a revenue goal with a different currency for an event name that already exists with another currency.
+
+## Notes
+
+- Goals are created with upsert behavior - if a goal already exists, it will be returned instead of creating a duplicate
+- Display names are automatically generated: event name for custom events, "Visit {path}" for pageviews
+- Leading and trailing whitespace in event names and paths is automatically trimmed
+- Pageview goals automatically get a leading `/` if not provided
+- Revenue goals cannot be created for consolidated views
+- Once created, a revenue goal's currency cannot be changed
+- Custom properties require the Props feature (available on certain plans)
+
+## Related Endpoints
+
+- [List Goals](/api/goals/list) - Retrieve all goals for a site
+- [Delete Goal](/api/goals/delete) - Remove a goal by ID
+- [Custom Events](/api/events/custom-events) - Send custom events to track against goals

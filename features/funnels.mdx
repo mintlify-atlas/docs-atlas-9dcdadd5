@@ -1,0 +1,298 @@
+---
+title: Funnel Analysis
+description: Track multi-step user journeys and identify where visitors drop off in your conversion process.
+---
+
+Funnels help you understand how visitors move through multi-step processes on your website. By visualizing the journey from initial interest to final conversion, you can identify bottlenecks and optimize your user experience.
+
+<Note>
+Funnel analysis is available on the Business plan. It requires goals to be set up before creating funnels.
+</Note>
+
+## What is a Funnel?
+
+A funnel represents a series of steps that visitors take toward a conversion goal. Each step is a goal, and the funnel shows:
+
+- How many visitors complete each step
+- Drop-off rates between steps
+- Overall conversion rate from start to finish
+- Time taken to move through the funnel
+
+## Creating Funnels
+
+<Steps>
+  <Step title="Set Up Goals First">
+    Before creating a funnel, ensure you have goals configured for each step. These can be:
+    - Custom event goals
+    - Pageview goals
+    - A combination of both
+  </Step>
+  
+  <Step title="Navigate to Funnel Settings">
+    Go to your site settings and select "Funnels" from the sidebar.
+  </Step>
+  
+  <Step title="Create New Funnel">
+    Click "Add Funnel" and configure:
+    - **Funnel Name**: Descriptive name (e.g., "Sign Up Flow")
+    - **Steps**: Select 2-8 goals in order
+  </Step>
+  
+  <Step title="Order Your Steps">
+    Arrange goals in the sequence visitors should follow:
+    ```
+    Step 1: Visit /pricing
+    Step 2: Click "Start Trial"
+    Step 3: Complete Signup
+    Step 4: Verify Email
+    ```
+  </Step>
+</Steps>
+
+## Funnel Constraints
+
+### Step Limits
+
+Funnels must have:
+- **Minimum**: 2 steps
+- **Maximum**: 8 steps
+
+<Info>
+Focusing on 3-5 steps typically provides the most actionable insights. Too many steps can make it difficult to identify specific optimization opportunities.
+</Info>
+
+### Step Requirements
+
+Each step must:
+- Be a configured goal
+- Be unique within the funnel (no repeated goals)
+- Have sufficient data for meaningful analysis
+
+## Viewing Funnel Analytics
+
+### Funnel Visualization
+
+The funnel chart displays:
+
+1. **Step Labels** - Names of each funnel step
+2. **Visitor Count** - Number of visitors reaching each step
+3. **Conversion Rate** - Percentage progressing from first step
+4. **Drop-off Visualization** - Striped pattern showing lost visitors
+5. **Overall Conversion** - Final conversion rate displayed at the top
+
+<Accordion title="Example Funnel Breakdown">
+```
+Step 1: Visit Product Page - 1,000 visitors (100%)
+  ↓ 70% conversion to next step
+Step 2: Add to Cart - 700 visitors (70%)
+  ↓ 50% conversion to next step  
+Step 3: Checkout - 350 visitors (35%)
+  ↓ 80% conversion to next step
+Step 4: Purchase Complete - 280 visitors (28%)
+
+Overall Conversion: 28%
+```
+</Accordion>
+
+### Desktop vs Mobile Views
+
+**Desktop View**
+- Interactive bar chart with gradient colors
+- Hover over steps for detailed tooltips
+- Data labels showing conversion rates and visitor counts
+
+**Mobile View**
+- Simplified horizontal bars
+- Touch-friendly interface
+- Key metrics displayed inline
+
+## Funnel Metrics
+
+### Key Metrics Displayed
+
+- **Visitors**: Unique visitors at each step
+- **Conversion Rate**: Percentage from initial step
+- **Drop-off**: Visitors lost between steps
+- **Step Conversion**: Conversion rate from previous step
+
+### Calculating Funnel Performance
+
+The system tracks:
+
+```
+Conversion Rate = (Final Step Visitors / First Step Visitors) × 100
+
+Drop-off Rate = 100% - Conversion Rate to Next Step
+```
+
+## Filtering Funnels
+
+Apply dashboard filters to analyze funnel performance by:
+
+- **Traffic Source** - Compare organic vs paid traffic
+- **Geographic Location** - Identify regional variations
+- **Device Type** - Desktop vs mobile performance
+- **Time Period** - Trend analysis over time
+- **UTM Parameters** - Campaign effectiveness
+
+<Info>
+Filters apply to the entire funnel, allowing you to see how different audience segments move through your conversion process.
+</Info>
+
+## Use Cases
+
+### E-commerce
+
+```
+1. View Product
+2. Add to Cart
+3. Enter Shipping Info
+4. Complete Payment
+```
+
+### SaaS Sign-up
+
+```
+1. Visit Pricing Page
+2. Click Sign Up
+3. Create Account
+4. Complete Onboarding
+```
+
+### Content Engagement
+
+```
+1. Visit Blog Post
+2. Scroll 90%
+3. Click CTA
+4. Submit Email
+```
+
+### Lead Generation
+
+```
+1. Visit Landing Page
+2. Click Form
+3. Fill Contact Details
+4. Download Resource
+```
+
+## Optimization Strategies
+
+<Steps>
+  <Step title="Identify Biggest Drop-offs">
+    Look for steps with the largest decrease in visitors. These represent your biggest optimization opportunities.
+  </Step>
+  
+  <Step title="Analyze by Segment">
+    Filter your funnel by different dimensions:
+    - Which device types have poor conversion?
+    - Do certain traffic sources perform better?
+    - Are there geographic patterns?
+  </Step>
+  
+  <Step title="Test and Iterate">
+    - Simplify steps with high drop-off rates
+    - A/B test different flows
+    - Remove unnecessary friction
+    - Add trust signals at critical steps
+  </Step>
+  
+  <Step title="Monitor Over Time">
+    Compare funnel performance across date ranges to measure the impact of your optimizations.
+  </Step>
+</Steps>
+
+## Managing Funnels
+
+### Editing Funnels
+
+You can modify existing funnels:
+- Change funnel name
+- Add or remove steps (within 2-8 step limit)
+- Reorder steps
+- Update goal configurations
+
+### Deleting Funnels
+
+When deleting a funnel:
+- Historical data is preserved
+- Associated goals remain intact
+- Funnel configuration is removed
+
+<Warning>
+Deleting a funnel cannot be undone. The funnel definition will be permanently removed, though your goals and their data remain available.
+</Warning>
+
+### Funnel Limits
+
+Each site can have multiple funnels to track different conversion paths. The exact limit depends on your plan.
+
+## Advanced Features
+
+### Goal Dependencies
+
+When a goal is part of a funnel:
+- Deleting the goal affects the funnel
+- If a funnel would have fewer than 2 steps after goal deletion, the funnel is automatically removed
+- Updating a goal's display name updates it across all funnels
+
+### Date Range Considerations
+
+Funnel data respects your selected date range:
+- Conversions must complete within the date range
+- Historical funnels can be analyzed retroactively
+- Comparison mode shows funnel performance changes
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Funnel shows no data">
+    - Verify that goals are receiving events
+    - Check that the date range includes relevant data
+    - Ensure visitors are completing at least the first step
+    - Allow sufficient time for data collection (24-48 hours recommended)
+  </Accordion>
+  
+  <Accordion title="Unexpected drop-off rates">
+    - Verify goal triggers are firing correctly
+    - Check that steps are in the correct order
+    - Review whether goals might be triggered out of sequence
+    - Consider if users can skip steps legitimately
+  </Accordion>
+  
+  <Accordion title="Cannot create funnel">
+    - Ensure you have at least 2 goals configured
+    - Verify Business plan features are available
+    - Check that selected goals are unique
+    - Confirm you're within funnel limits
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep It Simple" icon="minimize">
+    Start with 3-4 critical steps. You can always add more detail later.
+  </Card>
+  <Card title="Logical Flow" icon="arrow-right">
+    Ensure steps follow the natural user journey on your site.
+  </Card>
+  <Card title="Regular Review" icon="clock">
+    Check funnel performance weekly to catch issues early.
+  </Card>
+  <Card title="Segment Analysis" icon="filter">
+    Always analyze funnels by different traffic sources and devices.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Set Up Goals" icon="bullseye" href="/features/goals-conversions">
+    Create the goals you need for your funnels
+  </Card>
+  <Card title="Use Segments" icon="layer-group" href="/features/segments">
+    Create segments to analyze funnel performance
+  </Card>
+</CardGroup>

@@ -1,0 +1,336 @@
+---
+title: Google Search Console Integration
+description: Connect Google Search Console to Plausible Analytics to view search queries, impressions, and click-through rates
+---
+
+## Overview
+
+The Google Search Console integration allows you to view organic search data directly in your Plausible dashboard. See which search queries bring visitors to your site, along with impressions, click-through rates (CTR), and average positions.
+
+## Features
+
+- View top search queries driving traffic to your site
+- See impressions and clicks for each query
+- Monitor click-through rates (CTR)
+- Track average position in Google search results
+- Filter by date range
+- No need to leave your Plausible dashboard
+
+## Prerequisites
+
+Before integrating Google Search Console:
+
+<Steps>
+  <Step title="Verify Site Ownership">
+    Your site must be verified in Google Search Console with one of these permission levels:
+    - Site Owner
+    - Full User  
+    - Restricted User
+    
+    Learn more: [Google Search Console verification](https://support.google.com/webmasters/answer/9008080)
+  </Step>
+  
+  <Step title="Wait for Data">
+    Google Search Console typically takes 2-3 days to start collecting data for a new site.
+  </Step>
+  
+  <Step title="Admin Access">
+    You need admin access to your Plausible site to set up integrations.
+  </Step>
+</Steps>
+
+## Setup
+
+<Steps>
+  <Step title="Navigate to Settings">
+    In your Plausible dashboard, go to your site settings.
+  </Step>
+  
+  <Step title="Find Search Console Section">
+    Look for the "Google Search Console" section in the integrations area.
+  </Step>
+  
+  <Step title="Authorize with Google">
+    Click "Connect Google Search Console" to start the OAuth flow.
+    
+    You'll be redirected to Google to authorize access with the following scope:
+    ```
+    email https://www.googleapis.com/auth/webmasters.readonly
+    ```
+    
+    This grants read-only access to your Search Console data.
+  </Step>
+  
+  <Step title="Select Property">
+    After authorization, select which Search Console property to connect to your Plausible site.
+    
+    Properties must match one of your verified permission levels:
+    - `siteOwner`
+    - `siteFullUser`  
+    - `siteRestrictedUser`
+  </Step>
+  
+  <Step title="Complete Setup">
+    Save your selection. Data will start appearing in your dashboard within 24 hours.
+  </Step>
+</Steps>
+
+## Property Format
+
+Google Search Console properties can be in different formats:
+
+### Domain Properties
+
+```
+sc-domain:example.com
+```
+
+Includes all subdomains and protocols (http/https).
+
+### URL-Prefix Properties
+
+```
+https://example.com/
+https://www.example.com/
+```
+
+Specific to the exact URL prefix.
+
+<Note>
+  Plausible automatically strips trailing slashes when matching properties to your site.
+</Note>
+
+## Viewing Search Data
+
+Once connected, search data appears in your Plausible dashboard:
+
+1. Navigate to your site's analytics
+2. Look for the "Search Console" section
+3. View top queries with metrics:
+   - **Search Query** - The terms users searched for
+   - **Visitors** - Clicks from Google to your site
+   - **Impressions** - Times your site appeared in search results
+   - **CTR** - Click-through rate (rounded to 1 decimal place)
+   - **Position** - Average ranking position (rounded to 1 decimal place)
+
+### Filters
+
+Search Console data respects your Plausible filters:
+- Date range filters
+- Page filters (view queries for specific pages)
+- Custom filters
+
+## API Implementation
+
+The integration uses the Google Search Console API to fetch data.
+
+### Authentication Flow
+
+The OAuth 2.0 flow:
+
+1. Generate authorization URL:
+   ```
+   https://accounts.google.com/o/oauth2/v2/auth
+     ?client_id={CLIENT_ID}
+     &redirect_uri={REDIRECT_URI}
+     &prompt=consent
+     &response_type=code
+     &access_type=offline
+     &scope=email%20https://www.googleapis.com/auth/webmasters.readonly
+     &state=[SITE_ID,"search-console"]
+   ```
+
+2. Exchange code for tokens:
+   ```json
+   {
+     "access_token": "ya29.a0...",
+     "refresh_token": "1//0...",
+     "expires_in": 3600
+   }
+   ```
+
+3. Store tokens securely with expiration time
+
+### Token Refresh
+
+Access tokens expire after 1 hour. Plausible automatically refreshes tokens:
+
+```elixir
+# Check if refresh needed (30 seconds before expiry)
+if expires_at < (now + 30 seconds) do
+  {:ok, {new_access_token, new_expires_at}} = refresh_token(refresh_token)
+  # Update stored credentials
+end
+```
+
+### Fetching Search Stats
+
+The integration queries the Search Console API:
+
+```http
+POST https://www.googleapis.com/webmasters/v3/sites/{PROPERTY}/searchAnalytics/query
+Authorization: Bearer {ACCESS_TOKEN}
+Content-Type: application/json
+
+{
+  "startDate": "2024-01-01",
+  "endDate": "2024-01-31",
+  "dimensions": ["query"],
+  "rowLimit": 100
+}
+```
+
+Response:
+
+```json
+{
+  "rows": [
+    {
+      "keys": ["plausible analytics"],
+      "clicks": 245,
+      "impressions": 1823,
+      "ctr": 0.1344,
+      "position": 5.2
+    }
+  ]
+}
+```
+
+### Data Processing
+
+Plausible processes the response:
+
+```javascript
+// Rounded CTR (to 1 decimal place)
+ctr = (raw_ctr * 100).round(1)  // 13.4%
+
+// Rounded position (to 1 decimal place)  
+position = raw_position.round(1)  // 5.2
+
+// Map to display format
+{
+  name: query,
+  visitors: clicks,
+  impressions: impressions,
+  ctr: rounded_ctr,
+  position: rounded_position
+}
+```
+
+## Permission Levels
+
+Only verified properties with appropriate permissions are available:
+
+| Permission Level | Can Integrate? |
+|-----------------|----------------|
+| Site Owner | ✅ Yes |
+| Full User | ✅ Yes |
+| Restricted User | ✅ Yes |
+| Associate | ❌ No |
+| Unverified | ❌ No |
+
+## Troubleshooting
+
+### No Data Showing
+
+<AccordionGroup>
+  <Accordion title="Recently connected">
+    Search Console data may take 24-48 hours to appear in Plausible after connecting.
+  </Accordion>
+  
+  <Accordion title="New website">
+    Google Search Console needs 2-3 days to collect data for new sites.
+  </Accordion>
+  
+  <Accordion title="No organic traffic">
+    If your site isn't receiving organic Google traffic, there won't be search data to display.
+  </Accordion>
+  
+  <Accordion title="Wrong property selected">
+    Ensure you selected the correct Search Console property matching your site.
+  </Accordion>
+</AccordionGroup>
+
+### Authorization Errors
+
+<AccordionGroup>
+  <Accordion title="Token expired">
+    Plausible automatically refreshes tokens, but if you see auth errors:
+    1. Disconnect the integration
+    2. Reconnect and re-authorize
+  </Accordion>
+  
+  <Accordion title="Insufficient permissions">
+    Verify you have Owner, Full User, or Restricted User access in Google Search Console.
+  </Accordion>
+  
+  <Accordion title="Revoked access">
+    If you revoked Plausible's access in Google account settings, reconnect the integration.
+  </Accordion>
+</AccordionGroup>
+
+### Property Not Listed
+
+<AccordionGroup>
+  <Accordion title="Not verified">
+    Only verified properties with appropriate permissions appear in the list.
+  </Accordion>
+  
+  <Accordion title="Different Google account">
+    Ensure you're authorizing with the Google account that owns the Search Console property.
+  </Accordion>
+  
+  <Accordion title="Subdomain vs root domain">
+    Check if you have a domain property (`sc-domain:example.com`) or URL-prefix property (`https://example.com`).
+  </Accordion>
+</AccordionGroup>
+
+## Data Privacy
+
+The integration:
+
+- Only requests read-only access to Search Console data
+- Does not modify any Google Search Console settings
+- Stores only the minimum required credentials (access token, refresh token, expiry)
+- Refreshes tokens automatically without requiring re-authorization
+- Can be disconnected at any time from Plausible settings
+
+## Disconnecting
+
+To disconnect Google Search Console:
+
+<Steps>
+  <Step title="Go to Settings">
+    Navigate to your site settings in Plausible.
+  </Step>
+  
+  <Step title="Find Integration">
+    Locate the Google Search Console section.
+  </Step>
+  
+  <Step title="Disconnect">
+    Click "Disconnect" to remove the integration.
+  </Step>
+  
+  <Step title="Revoke Access (Optional)">
+    Optionally revoke Plausible's access in your [Google Account permissions](https://myaccount.google.com/permissions).
+  </Step>
+</Steps>
+
+## Limitations
+
+- Data is limited to Google organic search only (no Bing, DuckDuckGo, etc.)
+- Historical data depends on when you verified your site in Search Console
+- Google may anonymize some queries with very low traffic
+- API quotas may apply for very high-traffic sites
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tracker Script" icon="code" href="/integration/tracker-script">
+    Set up the Plausible tracking script
+  </Card>
+  <Card title="Custom Events" icon="chart-line" href="/integration/custom-events">
+    Track custom goals and conversions
+  </Card>
+</CardGroup>

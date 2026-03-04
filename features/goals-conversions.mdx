@@ -1,0 +1,267 @@
+---
+title: Goals & Conversions
+description: Track custom events, pageview goals, and revenue to measure what matters most for your business.
+---
+
+Goals allow you to track specific actions visitors take on your website. Whether it's signing up for a newsletter, completing a purchase, or viewing a specific page, Plausible helps you measure conversions without complex configurations.
+
+## Goal Types
+
+Plausible supports three types of goals:
+
+<CardGroup cols={3}>
+  <Card title="Custom Events" icon="sparkles">
+    Track custom actions like button clicks, form submissions, or any JavaScript-triggered event
+  </Card>
+  <Card title="Pageview Goals" icon="file">
+    Monitor visits to specific pages or page patterns
+  </Card>
+  <Card title="Scroll Depth" icon="arrows-down-to-line">
+    Measure how far visitors scroll on your pages
+  </Card>
+</CardGroup>
+
+## Creating Goals
+
+<Steps>
+  <Step title="Navigate to Goal Settings">
+    Go to your site settings and click on "Goals" in the sidebar.
+  </Step>
+  
+  <Step title="Choose Goal Type">
+    Select the type of goal you want to create:
+    - Custom Events for tracking specific actions
+    - Pageviews for tracking page visits
+    - Scroll Depth for tracking engagement
+  </Step>
+  
+  <Step title="Configure Goal Details">
+    Enter the goal configuration:
+    - **Event Name** (for custom events): e.g., "Signup", "Download", "Purchase"
+    - **Page Path** (for pageviews): e.g., "/thank-you", "/pricing/*"
+    - **Scroll Threshold** (for scroll depth): e.g., 90% scroll depth
+  </Step>
+  
+  <Step title="Set Display Name">
+    Choose a friendly name that will appear in your dashboard. This auto-fills based on your input but can be customized.
+  </Step>
+</Steps>
+
+<Info>
+Plausible detects custom events already being sent from your site in the past 6 months. You can autoconfigure all detected events with a single click.
+</Info>
+
+## Custom Event Goals
+
+Custom events track user interactions that aren't automatically captured:
+
+### Setting Up Custom Events
+
+After creating a custom event goal in settings, trigger it from your website:
+
+```javascript
+// Basic event tracking
+window.plausible('Signup')
+
+// Event with properties (requires Business plan)
+window.plausible('Purchase', {
+  props: {
+    product: 'Premium Plan',
+    price: 99
+  }
+})
+```
+
+### Built-in Events
+
+Plausible includes special event types that you can enable:
+
+- **Outbound Link: Click** - Automatically tracks clicks on external links
+- **File Download** - Tracks downloads of PDFs, documents, and files
+- **404** - Captures page not found errors
+- **Form: Submission** - Monitors form submissions
+
+<Accordion title="How to enable automatic events">
+In Goal Settings, you can enable these events with a single click. Once enabled, Plausible automatically tracks them without additional code changes.
+</Accordion>
+
+### Custom Properties
+
+Add context to your events with custom properties (Business plan feature):
+
+```javascript
+window.plausible('AddToCart', {
+  props: {
+    product_id: '12345',
+    category: 'Electronics',
+    value: 299.99
+  }
+})
+```
+
+<Note>
+Custom properties allow you to filter and break down goal conversions by specific attributes. You can configure which properties to track when creating the goal.
+</Note>
+
+## Pageview Goals
+
+Pageview goals track when visitors land on specific pages:
+
+### Page Path Patterns
+
+Use wildcards to match multiple pages:
+
+- **Exact match**: `/thank-you` - Only matches this exact page
+- **Wildcard**: `/blog/*` - Matches all blog posts
+- **Prefix**: `/pricing*` - Matches /pricing, /pricing-annual, etc.
+
+### Use Cases
+
+- Thank you pages after form submissions
+- Checkout completion pages
+- Category or section landing pages
+- Download confirmation pages
+
+<Info>
+Pageview goals automatically appear in your dashboard once configured. No additional code is required.
+</Info>
+
+## Scroll Depth Goals
+
+Measure visitor engagement by tracking how far they scroll:
+
+### Configuration
+
+- **Scroll Threshold**: Set percentage (1-100%)
+- **Page Path**: Specific page or pattern to track
+- **Display Name**: e.g., "Scroll 90% on /blog/post"
+
+### Best Practices
+
+- Use 25%, 50%, 75%, and 90% thresholds for granular insights
+- Track scroll depth on long-form content pages
+- Combine with Time on Page for engagement analysis
+
+## Revenue Tracking
+
+Track monetary value for your goals (Business plan feature):
+
+<Steps>
+  <Step title="Enable Revenue Tracking">
+    When creating or editing a custom event goal, toggle "Enable revenue tracking" and select a currency.
+  </Step>
+  
+  <Step title="Send Revenue Data">
+    Pass the revenue amount when triggering the event:
+    
+    ```javascript
+    window.plausible('Purchase', {
+      revenue: {
+        currency: 'USD',
+        amount: 99.00
+      }
+    })
+    ```
+  </Step>
+  
+  <Step title="View Revenue Metrics">
+    Your dashboard will show:
+    - Total Revenue
+    - Average Revenue per conversion
+    - Revenue broken down by any dimension
+  </Step>
+</Steps>
+
+<Warning>
+Revenue goals require a specific currency to be set. Once set, the currency cannot be changed. Create separate goals if you need to track multiple currencies.
+</Warning>
+
+## Viewing Conversion Data
+
+### Dashboard View
+
+After creating goals, your dashboard displays:
+
+- **Goal Conversions** - Total number of goal completions
+- **Unique Conversions** - Number of unique visitors who completed the goal
+- **Conversion Rate** - Percentage of visitors who completed the goal
+- **Revenue Metrics** - Total and average revenue (for revenue goals)
+
+### Filtering by Goals
+
+Click on any goal to filter your entire dashboard:
+
+- See which traffic sources drive the most conversions
+- Identify which pages lead to goal completions
+- Analyze device and browser performance for conversions
+- Compare conversion rates across countries
+
+## Goal Limits
+
+Each site can have up to **1,000 goals**. This includes:
+
+- Custom event goals
+- Pageview goals
+- Scroll depth goals
+
+<Accordion title="Managing goal limits">
+If you reach the goal limit, consider:
+- Removing unused goals
+- Consolidating similar goals
+- Using custom properties to add granularity to existing goals instead of creating new ones
+</Accordion>
+
+## Advanced Features
+
+### Goal-Specific Filters
+
+When creating goals with custom properties, you can:
+
+1. Define property key-value pairs
+2. Filter conversions by property values
+3. Break down goal performance by properties
+
+### Goal Integration
+
+Goals integrate with other Plausible features:
+
+- **Funnels** - Create multi-step conversion funnels using goals
+- **Segments** - Filter dashboards by specific goal completions
+- **API** - Access goal data programmatically
+- **Email Reports** - Include goal metrics in scheduled reports
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Goal not showing conversions">
+    - Verify the goal is properly configured
+    - Check that the event name matches exactly (case-sensitive)
+    - For pageview goals, ensure the URL path is correct
+    - Allow up to 24 hours for data to appear in some cases
+  </Accordion>
+  
+  <Accordion title="Custom event not triggering">
+    - Open browser console and check for JavaScript errors
+    - Verify window.plausible is defined
+    - Ensure the script is loaded before triggering events
+    - Check that the goal is created in settings
+  </Accordion>
+  
+  <Accordion title="Revenue not tracking">
+    - Confirm revenue tracking is enabled for the goal
+    - Verify currency matches the goal configuration
+    - Check that amount is a valid number
+    - Ensure Business plan features are available
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Create Funnels" icon="filter" href="/features/funnels">
+    Build multi-step funnels from your goals
+  </Card>
+  <Card title="Use Segments" icon="layer-group" href="/features/segments">
+    Create segments based on goal completions
+  </Card>
+</CardGroup>

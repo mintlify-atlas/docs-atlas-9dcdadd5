@@ -1,0 +1,178 @@
+---
+title: Analytics Dashboard
+description: Explore your site's analytics with Plausible's intuitive dashboard featuring real-time metrics, visitor insights, and comprehensive reporting.
+---
+
+The Plausible Analytics dashboard provides a comprehensive view of your website traffic and visitor behavior. Built with privacy in mind, it delivers powerful insights without compromising user privacy or requiring cookies.
+
+## Overview
+
+Your dashboard displays key metrics and visitor data in an easy-to-understand format. All data updates in real-time, giving you instant visibility into your website's performance.
+
+<Info>
+The dashboard is optimized for speed and simplicity. Unlike other analytics platforms, you can see everything you need on a single page without navigating through multiple menus.
+</Info>
+
+## Key Metrics
+
+The dashboard tracks essential metrics to help you understand your site's performance:
+
+### Visitor Metrics
+
+- **Visitors** - Unique visitors tracked by user ID (without cookies or persistent identifiers)
+- **Visits** - Total number of sessions on your site
+- **Pageviews** - Total pages viewed across all visits
+- **Views per Visit** - Average number of pages viewed per session
+- **Bounce Rate** - Percentage of single-page visits
+- **Visit Duration** - Average time visitors spend on your site
+
+<Note>
+All metrics are calculated using privacy-friendly methods. Plausible generates a unique user ID from the visitor's IP address, User Agent, and the website domain, which is then hashed and rotated daily.
+</Note>
+
+### Additional Metrics
+
+- **Time on Page** - Average time spent on individual pages
+- **Exit Rate** - Percentage of visitors who leave from a specific page
+- **Scroll Depth** - How far visitors scroll on your pages (when configured)
+- **Conversion Rate** - Percentage of visitors completing goals
+
+## Data Visualization
+
+The dashboard presents your data through multiple visualization methods:
+
+<Steps>
+  <Step title="Timeline Graph">
+    View your traffic trends over time with an interactive chart. The graph automatically adjusts based on your selected date range:
+    - **Day**: Hourly breakdown
+    - **Week/Month**: Daily breakdown
+    - **Year**: Monthly breakdown
+  </Step>
+  
+  <Step title="Top Sources">
+    See where your visitors are coming from:
+    - Direct traffic
+    - Search engines
+    - Referral sites
+    - Social media platforms
+    - UTM campaigns
+  </Step>
+  
+  <Step title="Top Pages">
+    Discover your most popular content with metrics for each page:
+    - Pageviews
+    - Unique visitors
+    - Bounce rate
+    - Time on page
+  </Step>
+  
+  <Step title="Geographic Data">
+    Understand your audience location:
+    - Country breakdown
+    - Region/state data
+    - City-level insights
+  </Step>
+  
+  <Step title="Device Analytics">
+    View visitor device information:
+    - Screen sizes
+    - Browsers and versions
+    - Operating systems
+  </Step>
+</Steps>
+
+## Date Range Selection
+
+Customize your view with flexible date ranges:
+
+- **Real-time** - Last 30 minutes
+- **Day** - Today's traffic
+- **7 days** - Last week
+- **30 days** - Last month (default)
+- **Month** - Current or previous months
+- **Year** - 12-month overview
+- **All time** - Complete history
+- **Custom** - Select specific date ranges
+
+<Accordion title="How date ranges work">
+Date ranges are calculated based on your site's timezone. You can set your preferred timezone in Site Settings. The dashboard automatically adjusts intervals based on the selected range to show the most relevant data granularity.
+</Accordion>
+
+## Filtering and Breakdowns
+
+Drill down into your data using powerful filtering capabilities:
+
+### Filter by Dimension
+
+Click on any metric value to filter your dashboard:
+
+- Filter by specific pages
+- Filter by traffic source
+- Filter by country, region, or city
+- Filter by device, browser, or OS
+- Filter by UTM parameters
+- Combine multiple filters
+
+### Breakdown Analysis
+
+Break down any metric by multiple dimensions:
+
+```
+Example: View "Top Pages" broken down by "Country" to see which pages
+are popular in different regions.
+```
+
+<Info>
+Filters persist across page refreshes, so you can bookmark filtered views for quick access to specific insights.
+</Info>
+
+## Comparison Mode
+
+Compare your current period with a previous period:
+
+- Compare with previous period (automatic)
+- Compare with previous year
+- Custom period comparison
+
+Comparison metrics show:
+- Absolute change in numbers
+- Percentage change
+- Visual indicators (up/down arrows)
+
+## Dashboard Performance
+
+Plausible's dashboard is built for speed:
+
+- **Fast Queries** - ClickHouse database ensures sub-second query times
+- **Optimized Loading** - Lazy loading for charts and detailed breakdowns
+- **Efficient Caching** - Smart caching reduces server load
+- **Responsive Design** - Works seamlessly on desktop and mobile devices
+
+<Warning>
+For sites with very high traffic volumes (millions of pageviews), some complex queries may take a few seconds to load. The dashboard uses query optimization to minimize wait times.
+</Warning>
+
+## Keyboard Shortcuts
+
+Navigate your dashboard efficiently:
+
+- Press `d` to open date picker
+- Press `?` to view all available shortcuts
+- Use arrow keys to navigate through data tables
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Set Up Goals" icon="bullseye" href="/features/goals-conversions">
+    Track conversions and measure goal completion
+  </Card>
+  <Card title="Create Funnels" icon="filter" href="/features/funnels">
+    Analyze user journeys through multi-step processes
+  </Card>
+  <Card title="Use Segments" icon="layer-group" href="/features/segments">
+    Filter and save custom audience segments
+  </Card>
+  <Card title="View Real-time Data" icon="bolt" href="/features/realtime">
+    Monitor current visitors on your site
+  </Card>
+</CardGroup>

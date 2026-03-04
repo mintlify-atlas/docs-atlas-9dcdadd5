@@ -1,0 +1,166 @@
+---
+title: "Plausible Analytics - Privacy-Friendly Web Analytics"
+description: "Simple, lightweight, and privacy-focused alternative to Google Analytics. Track website stats without compromising user privacy. GDPR, CCPA, and PECR compliant."
+---
+
+<img
+  className="block dark:hidden"
+  src="https://plausible.io/docs/img/plausible-analytics.png"
+  alt="Plausible Analytics Dashboard"
+/>
+<img
+  className="hidden dark:block"
+  src="https://plausible.io/docs/img/plausible-analytics.png"
+  alt="Plausible Analytics Dashboard"
+/>
+
+## Welcome to Plausible Analytics
+
+Plausible Analytics is an easy-to-use, lightweight, open source, and privacy-friendly alternative to Google Analytics. It doesn't use cookies and is fully compliant with GDPR, CCPA, and PECR. You can self-host Plausible Community Edition or have us manage Plausible Analytics for you in the cloud.
+
+We're dedicated to making web analytics more privacy-friendly. Our mission is to reduce corporate surveillance by providing an alternative web analytics tool which doesn't come from the AdTech world. We're completely independent and solely funded by our subscribers.
+
+<Note>
+  **Made and hosted in the EU** - All visitor data is exclusively processed on EU-owned cloud infrastructure, ensuring compliance with strict European data privacy laws.
+</Note>
+
+## Why Choose Plausible?
+
+<CardGroup cols={2}>
+  <Card title="Clutter-Free Dashboard" icon="chart-simple">
+    Get all important insights on one single page. No layers of menus, no custom reports needed. Simple web analytics that cuts through the noise.
+  </Card>
+  
+  <Card title="Privacy Compliant" icon="shield-check">
+    GDPR, CCPA, and PECR compliant out of the box. No personal data or IP addresses stored. No cookies or persistent identifiers used.
+  </Card>
+  
+  <Card title="Lightweight Script" icon="feather">
+    Our tracking script is small and loads fast, making your website quicker. You can also send events directly to our Events API.
+  </Card>
+  
+  <Card title="Open Source" icon="code">
+    Fully open source under AGPLv3. Self-host the Community Edition or use our managed cloud service. Your data, your choice.
+  </Card>
+</CardGroup>
+
+## Key Features
+
+### Simple Metrics That Matter
+
+Plausible provides straightforward web analytics without the complexity:
+
+- **Realtime Dashboard** - See visitor activity as it happens
+- **Entry Pages Report** - Understand how users discover your content
+- **Traffic Sources** - Track where your visitors come from
+- **Goal Tracking** - Measure conversions and custom events
+- **Search Keywords** - Integrate with Google Search Console for keyword data
+
+### Privacy-First Architecture
+
+We measure traffic, not individuals:
+
+- No personal data collection
+- No IP address storage
+- No cookies or persistent identifiers
+- Aggregated analytics only
+- Full compliance with privacy regulations
+
+### Powerful Analytics Features
+
+<CardGroup cols={2}>
+  <Card title="Custom Events & Goals" icon="bullseye">
+    Track conversions, form submissions, file downloads, and custom events with custom properties for deeper insights.
+  </Card>
+  
+  <Card title="Ecommerce Revenue" icon="dollar-sign">
+    Assign monetary values to purchases and track revenue attribution to understand what drives sales.
+  </Card>
+  
+  <Card title="Funnel Analysis" icon="filter">
+    Visualize user journeys and identify drop-off points to increase conversions through your sales funnel.
+  </Card>
+  
+  <Card title="Team Collaboration" icon="users">
+    Invite team members with different roles or share stats publicly with a custom link.
+  </Card>
+</CardGroup>
+
+### Modern Framework Support
+
+Built with modern web development in mind:
+
+- **SPA Support** - Works automatically with any pushState-based router
+- **Hash-Based Routing** - Support for frameworks using URL hash navigation
+- **NPM Package** - Install via `@plausible-analytics/tracker` for JavaScript apps
+- **API Access** - Full stats API and events API for custom integrations
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get up and running in 2 minutes with our cloud service
+  </Card>
+  
+  <Card title="Installation" icon="download" href="/installation">
+    Choose between cloud hosting or self-hosted Community Edition
+  </Card>
+  
+  <Card title="Integration Guides" icon="plug">
+    WordPress, GTM, NPM, and more integration options
+  </Card>
+  
+  <Card title="API Documentation" icon="code">
+    Access your stats programmatically with our comprehensive API
+  </Card>
+</CardGroup>
+
+## Cloud vs Self-Hosted
+
+<Note>
+  **Plausible Cloud** takes 2 minutes to set up with worldwide CDN, high availability, backups, security, and maintenance all handled for you. Revenue supports ongoing development.
+</Note>
+
+**Plausible Community Edition (CE)** is free and self-hosted, giving you complete control over your data and infrastructure. However, you're responsible for server management, updates, and maintenance.
+
+Key differences include:
+
+- **Release Schedule** - Cloud receives continuous updates multiple times per week; CE is a long-term release published twice yearly
+- **Bot Filtering** - Cloud includes advanced bot filtering with ~32K data center IP ranges excluded; CE has basic filtering
+- **Premium Features** - Marketing funnels, ecommerce revenue goals, SSO, and Sites API are cloud-only
+- **Support** - Cloud includes premium support from the team; CE is community-supported only
+
+## Technology Stack
+
+Plausible is built with:
+
+- **Backend** - Elixir/Phoenix application
+- **Databases** - PostgreSQL for general data, ClickHouse for analytics
+- **Frontend** - React with TailwindCSS
+- **Tracker** - Lightweight JavaScript (< 1KB gzipped)
+
+<Warning>
+  **Why Isn't Plausible Free?** - Unlike Google Analytics which funds itself through surveillance capitalism and ad targeting, Plausible is independently owned and funded by subscribers. We collect no personal data and sell nothing to third parties. Your subscription supports ongoing development and keeps the project sustainable.
+</Warning>
+
+## Next Steps
+
+<Steps>
+  <Step title="Sign Up">
+    Create your account on [plausible.io](https://plausible.io) or set up self-hosting
+  </Step>
+  
+  <Step title="Add Your Site">
+    Register your domain and get your tracking snippet
+  </Step>
+  
+  <Step title="Install Tracker">
+    Add the lightweight script to your website's `<head>` section
+  </Step>
+  
+  <Step title="Start Tracking">
+    See your first pageview and explore privacy-friendly analytics
+  </Step>
+</Steps>
+
+Ready to start? Check out our [Quick Start guide](/quickstart) to begin tracking in minutes.

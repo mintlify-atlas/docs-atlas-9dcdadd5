@@ -1,0 +1,133 @@
+---
+title: Get Site
+description: Retrieve details about a specific site
+---
+
+## GET /api/v1/sites/:site_id
+
+Retrieves information about a specific site. The `site_id` parameter can be either the current domain or the previous domain (if the domain was changed).
+
+### Authentication
+
+Requires a valid API key with either:
+- `sites:read:*` scope (read-only access)
+- `sites:provision:*` scope (full access)
+
+### Path Parameters
+
+<ParamField path="site_id" type="string" required>
+  The domain of the site to retrieve. Can be the current domain or the previous domain if it was changed.
+  
+  Examples: `example.com`, `blog.example.com`
+</ParamField>
+
+### Response
+
+<ResponseField name="domain" type="string">
+  The current domain of the site.
+</ResponseField>
+
+<ResponseField name="timezone" type="string">
+  The timezone configured for the site.
+</ResponseField>
+
+<ResponseField name="custom_properties" type="array">
+  List of allowed custom event properties for this site. These are the properties that can be attached to custom events.
+</ResponseField>
+
+<ResponseField name="tracker_script_configuration" type="object">
+  The tracker script configuration for the site.
+  
+  <Expandable title="Configuration Fields">
+    <ResponseField name="tracker_script_configuration.id" type="string">
+      The unique identifier for this configuration.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.installation_type" type="string">
+      The installation method (e.g., `manual`, `wordpress`, or `null`).
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.track_404_pages" type="boolean">
+      Whether 404 tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.hash_based_routing" type="boolean">
+      Whether hash-based routing is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.outbound_links" type="boolean">
+      Whether outbound link tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.file_downloads" type="boolean">
+      Whether file download tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.revenue_tracking" type="boolean">
+      Whether revenue tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.tagged_events" type="boolean">
+      Whether CSS class-based event tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.form_submissions" type="boolean">
+      Whether form submission tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.pageview_props" type="boolean">
+      Whether pageview properties are enabled.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<CodeGroup>
+```bash cURL
+curl https://plausible.io/api/v1/sites/example.com \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```bash Get Site After Domain Change
+# You can still access a site by its old domain after changing it
+curl https://plausible.io/api/v1/sites/old-domain.com \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```json 200 Response
+{
+  "domain": "example.com",
+  "timezone": "America/New_York",
+  "custom_properties": ["logged_in", "author"],
+  "tracker_script_configuration": {
+    "id": "abc123",
+    "installation_type": "manual",
+    "track_404_pages": false,
+    "hash_based_routing": true,
+    "outbound_links": true,
+    "file_downloads": true,
+    "revenue_tracking": false,
+    "tagged_events": false,
+    "form_submissions": true,
+    "pageview_props": false
+  }
+}
+```
+
+```json 404 Error - Site Not Found
+{
+  "error": "Site could not be found"
+}
+```
+
+```json 401 Error - Unauthorized
+{
+  "error": "Invalid API key. Please make sure you're using a valid API key with access to the resource you've requested."
+}
+```
+</CodeGroup>
+
+## Notes
+
+- You must have at least viewer-level access to the site to retrieve its information
+- If the site's domain was changed, you can use either the old or new domain to access it
+- Team-scoped API keys will only return sites belonging to the specified team

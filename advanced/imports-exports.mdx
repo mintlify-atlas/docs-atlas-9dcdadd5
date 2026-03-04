@@ -1,0 +1,513 @@
+---
+title: Data Import and Export
+description: Import historical data from Google Analytics and export your Plausible data as CSV files
+---
+
+Plausible supports importing historical data from analytics platforms and exporting your data for analysis, backup, or migration purposes.
+
+## Data Import
+
+Import historical analytics data to maintain continuity when switching to Plausible.
+
+### Supported Import Sources
+
+Plausible supports importing from:
+
+1. **Google Analytics 4 (GA4)** - Currently supported
+2. **Universal Analytics (UA)** - Legacy support (read-only for existing imports)
+3. **CSV Files** - Import from any source using the standard format
+
+<Warning>
+Universal Analytics imports are no longer supported for new imports. Existing UA imports remain accessible for historical data viewing.
+</Warning>
+
+### Google Analytics 4 Import
+
+<Steps>
+  <Step title="Navigate to Import Settings">
+    Go to Site Settings > Data Import > Google Analytics 4
+  </Step>
+  
+  <Step title="Connect Google Account">
+    Authenticate with your Google account that has access to your GA4 property.
+  </Step>
+  
+  <Step title="Select Property and Date Range">
+    - Choose your GA4 property
+    - Select the start and end dates for the import
+    - Optionally add a label to identify this import
+  </Step>
+  
+  <Step title="Start Import">
+    Click "Start Import" to begin the process. Large imports may take several hours.
+  </Step>
+</Steps>
+
+### GA4 Import Details
+
+```elixir
+defmodule Plausible.Imported.GoogleAnalytics4 do
+  @impl true
+  def name(), do: :google_analytics_4
+  
+  @impl true
+  def label(), do: "Google Analytics 4"
+  
+  @impl true
+  def email_template(), do: "google_analytics_import.html"
+end
+```
+
+**What gets imported:**
+- Visitors and pageviews
+- Traffic sources and campaigns
+- Pages and entry/exit pages
+- Custom events
+- Geographic data (countries, regions, cities)
+- Device data (browsers, operating systems, screen sizes)
+- UTM parameters
+
+<Info>
+GA4 imports support resume functionality. If an import fails due to rate limits, it will automatically resume from where it left off.
+</Info>
+
+### Import Schema
+
+```elixir
+schema "site_imports" do
+  field :start_date, :date
+  field :end_date, :date
+  field :label, :string
+  field :source, Ecto.Enum  # :google_analytics_4, :universal_analytics, :csv
+  field :status, Ecto.Enum  # :pending, :importing, :completed, :failed
+  field :legacy, :boolean, default: false
+  field :has_scroll_depth, :boolean, default: false
+  
+  belongs_to :site, Plausible.Site
+  belongs_to :imported_by, User
+  
+  timestamps()
+end
+```
+
+### Import Statuses
+
+- **Pending**: Import queued, waiting to start
+- **Importing**: Currently in progress
+- **Completed**: Successfully finished
+- **Failed**: Import encountered an error
+
+<Note>
+You'll receive an email notification when your import completes or fails.
+</Note>
+
+### CSV Import
+
+Import data from any analytics platform using Plausible's CSV format.
+
+<Steps>
+  <Step title="Prepare CSV Files">
+    Export your data in Plausible's CSV format (see format specification below).
+  </Step>
+  
+  <Step title="Navigate to CSV Import">
+    Go to Site Settings > Data Import > CSV Upload
+  </Step>
+  
+  <Step title="Upload Files">
+    Upload your CSV files. You can upload multiple files for different data types.
+  </Step>
+  
+  <Step title="Configure Import">
+    - Set the date range
+    - Add an optional label
+    - Choose storage location (S3 or local)
+  </Step>
+  
+  <Step title="Start Import">
+    Begin the import process. You'll be notified when complete.
+  </Step>
+</Steps>
+
+### CSV File Format
+
+CSV files must follow the naming convention:
+```
+{table_name}_{start_date}_{end_date}.csv
+```
+
+**Examples:**
+```
+imported_visitors_20190101_20231231.csv
+imported_sources_20230101_20231231.csv
+imported_pages_20230601_20230630.csv
+```
+
+**Supported tables:**
+- `imported_visitors`
+- `imported_sources`
+- `imported_pages`
+- `imported_entry_pages`
+- `imported_exit_pages`
+- `imported_custom_events`
+- `imported_locations`
+- `imported_devices`
+- `imported_browsers`
+- `imported_operating_systems`
+
+<Info>
+Date format in filenames must be YYYYMMDD (e.g., 20230101 for January 1, 2023).
+</Info>
+
+### CSV Column Specifications
+
+**imported_visitors:**
+```csv
+date,visitors,pageviews,bounces,visits,visit_duration
+2023-01-01,1234,5678,456,1500,345678
+```
+
+**imported_sources:**
+```csv
+date,source,referrer,utm_source,utm_medium,utm_campaign,utm_content,utm_term,pageviews,visitors,visits,visit_duration,bounces
+2023-01-01,Google,,google,organic,,,search-term,1234,567,890,12345,123
+```
+
+**imported_pages:**
+```csv
+date,hostname,page,visits,visitors,pageviews,total_scroll_depth,total_scroll_depth_visits,total_time_on_page,total_time_on_page_visits
+2023-01-01,example.com,/,500,400,600,15000,300,120000,250
+```
+
+<Warning>
+All CSV files must include column headers as the first row and use the exact column names specified.
+</Warning>
+
+## Data Export
+
+Export your Plausible data as CSV files for analysis, backup, or migration.
+
+### Export Features
+
+- Export all your site data in CSV format
+- Compressed as ZIP archive
+- Store on S3 or local storage
+- Includes all metrics and dimensions
+- Support for custom date ranges
+
+### Creating an Export
+
+<Steps>
+  <Step title="Navigate to Export Settings">
+    Go to Site Settings > Data Export
+  </Step>
+  
+  <Step title="Request Export">
+    Click "Export data" to start the export process.
+  </Step>
+  
+  <Step title="Wait for Processing">
+    Large exports may take several minutes. You'll receive an email when ready.
+  </Step>
+  
+  <Step title="Download Archive">
+    Download the ZIP file containing all your CSV exports.
+  </Step>
+</Steps>
+
+### Export Storage
+
+**S3 Storage (Production):**
+```elixir
+Plausible.Exports.schedule_s3_export(site_id, email_to)
+```
+
+**Local Storage (Self-hosted):**
+```elixir
+Plausible.Exports.schedule_local_export(site_id, email_to)
+```
+
+<Info>
+S3 exports have automatic expiration dates. Download your export promptly to avoid it being deleted.
+</Info>
+
+### Export Contents
+
+Your export ZIP contains CSV files for:
+
+- **imported_visitors** - Visitor counts and pageviews
+- **imported_sources** - Traffic sources and campaigns
+- **imported_pages** - Page statistics with time on page
+- **imported_entry_pages** - Landing pages
+- **imported_exit_pages** - Exit pages
+- **imported_custom_events** - Custom events and goals
+- **imported_locations** - Geographic data
+- **imported_devices** - Device types
+- **imported_browsers** - Browser information
+- **imported_operating_systems** - OS statistics
+- **imported_custom_props** - Custom properties (if enabled)
+
+### Export Filename
+
+Exports are named using the format:
+```
+{domain}_{date}.zip
+```
+
+**Example:**
+```
+example_com_20231231.zip
+```
+
+### Querying Export Status
+
+Check the status of your export:
+
+```elixir
+# Get last export job
+Plausible.Exports.get_last_export_job(site_id)
+
+# Returns Oban.Job with status:
+# - scheduled
+# - executing  
+# - completed
+# - failed
+```
+
+### Export with Date Range
+
+Export specific date ranges:
+
+```elixir
+export_queries(site,
+  date_range: Date.range(~D[2023-01-01], ~D[2023-12-31]),
+  timezone: "America/New_York",
+  extname: ".csv"
+)
+```
+
+<Note>
+Exports respect your site's timezone setting to ensure accurate date boundaries.
+</Note>
+
+## Managing Imports
+
+### Viewing Import History
+
+See all past and current imports:
+1. Navigate to Site Settings > Data Import
+2. View list of imports with:
+   - Import source (GA4, UA, CSV)
+   - Date range
+   - Status
+   - Import date
+   - Imported by
+
+### Import Labels
+
+Add descriptive labels to imports:
+
+```elixir
+# Label is combined with source
+label(import) = "Google Analytics 4 (Migration 2023)"
+label(import) = "CSV"
+label(import) = "Google Analytics (Q4 Data)"
+```
+
+Labels help you identify the purpose of each import.
+
+### Canceling Imports
+
+<Warning>
+In-progress imports cannot be canceled. Wait for completion or failure, then delete if needed.
+</Warning>
+
+### Deleting Imports
+
+Remove imported data:
+1. Find the import in your import history
+2. Click "Delete"
+3. Confirm deletion
+4. All data from this import will be removed
+
+<Note>
+Deleting an import removes all associated data from your analytics. This action cannot be undone.
+</Note>
+
+## Import/Export Technical Details
+
+### Data Tables
+
+Imported data is stored in ClickHouse tables:
+
+- `imported_visitors`
+- `imported_sources`
+- `imported_pages`
+- `imported_entry_pages`
+- `imported_exit_pages`
+- `imported_custom_events`
+- `imported_locations`
+- `imported_devices`
+- `imported_browsers`
+- `imported_operating_systems`
+- `imported_custom_props`
+
+### Import ID Tracking
+
+All imported records include:
+```elixir
+site_id: integer
+import_id: integer  # Links to site_imports table
+date: date
+# ... metric-specific fields
+```
+
+This allows:
+- Querying data by import
+- Deleting specific imports
+- Combining native and imported data
+
+### Performance Considerations
+
+**Import Performance:**
+- GA4 imports use batch processing
+- CSV imports support streaming for large files
+- Rate limits may slow GA4 imports
+- Resume functionality prevents data loss
+
+**Export Performance:**
+- 15-minute timeout per export job
+- Streaming export to reduce memory usage
+- Compression reduces file size
+- Parallel query execution
+
+<Info>
+Large exports (millions of events) are optimized using ClickHouse streaming queries and ZIP compression.
+</Info>
+
+## Troubleshooting
+
+### Import Issues
+
+**GA4 import failed:**
+- Check Google account permissions
+- Verify GA4 property access
+- Review date range (must have data)
+- Check for rate limiting
+
+**CSV import failed:**
+- Verify filename format: `table_YYYYMMDD_YYYYMMDD.csv`
+- Check column headers match specification
+- Ensure dates are in correct format
+- Validate CSV structure (no missing columns)
+
+**Import stuck in "importing" status:**
+- Large imports take time (hours for years of data)
+- Check your email for completion notification
+- Review import job status in settings
+
+### Export Issues
+
+**Export failed:**
+- Ensure site has data
+- Check storage availability (S3 or local)
+- Verify date range is valid
+- Review error in email notification
+
+**Can't download export:**
+- Check if export expired (S3 only)
+- Verify you're logged in
+- Try creating a new export
+
+**Export too large:**
+- Use date range filtering
+- Export in smaller chunks
+- Contact support for very large sites
+
+## Best Practices
+
+<Steps>
+  <Step title="Import Historical Data Early">
+    Import GA4 data before making the switch to maintain historical continuity.
+  </Step>
+  
+  <Step title="Verify Imports">
+    After importing, spot-check data against your original analytics platform.
+  </Step>
+  
+  <Step title="Label Imports">
+    Use descriptive labels to identify what each import contains.
+  </Step>
+  
+  <Step title="Regular Exports">
+    Export data periodically for backup purposes.
+  </Step>
+  
+  <Step title="Test CSV Format">
+    Test CSV imports with small date ranges before importing years of data.
+  </Step>
+  
+  <Step title="Monitor Import Status">
+    Check import progress and address failures promptly.
+  </Step>
+</Steps>
+
+## Import/Export Limitations
+
+### Import Limitations
+
+- One active import per site at a time
+- GA4 API rate limits may slow imports
+- Date ranges must have actual data
+- CSV files must follow exact format specification
+- Maximum file size depends on storage configuration
+
+### Export Limitations
+
+- 15-minute maximum execution time
+- One export job per site at a time
+- S3 exports expire after configured retention period
+- Must have data to export
+- Exports include all site data (no metric filtering)
+
+<Warning>
+Both imports and exports require an active subscription (or trial period).
+</Warning>
+
+## Use Cases
+
+### Migration from Google Analytics
+
+```
+1. Export data from GA4
+2. Import to Plausible using GA4 importer
+3. Verify data accuracy
+4. Install Plausible script on your site
+5. Retire GA4 tracking
+```
+
+### Data Backup
+
+```
+1. Monthly exports to local storage
+2. Archive ZIP files
+3. Store offsite for disaster recovery
+```
+
+### Multi-Platform Analytics
+
+```
+1. Export from multiple analytics platforms
+2. Convert to Plausible CSV format
+3. Import all sources
+4. Unified analytics in Plausible
+```
+
+### Compliance and Auditing
+
+```
+1. Export data for compliance period
+2. Provide to auditors
+3. Archive for retention requirements
+4. Delete from Plausible if needed
+```

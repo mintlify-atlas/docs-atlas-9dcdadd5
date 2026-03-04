@@ -1,0 +1,245 @@
+---
+title: 'API Overview'
+description: 'Introduction to the Plausible Analytics API for programmatic access to your web analytics data'
+---
+
+## Introduction
+
+The Plausible Analytics API provides programmatic access to your web analytics data. It consists of two main APIs:
+
+<CardGroup cols={2}>
+  <Card title="Stats API" icon="chart-line" href="/api/stats-api">
+    Query analytics data, metrics, and breakdowns for your sites
+  </Card>
+  <Card title="Sites API" icon="globe" href="/api/sites-api">
+    Manage sites, goals, custom properties, and integrations
+  </Card>
+</CardGroup>
+
+## API Versions
+
+Plausible offers multiple API versions:
+
+- **v1 Stats API** (`/api/v1/stats`) - Legacy stats endpoints with simple aggregations and breakdowns
+- **v2 Query API** (`/api/v2/query`) - Modern query API with advanced filtering and aggregations
+- **v1 Sites API** (`/api/v1/sites`) - Site provisioning and configuration (Enterprise Edition)
+
+## Base URL
+
+All API requests should be made to:
+
+```
+https://plausible.io/api
+```
+
+For self-hosted instances, replace `plausible.io` with your instance domain.
+
+## API Scopes
+
+Plausible uses scope-based authorization. When creating an API key, you can assign one or more scopes:
+
+<AccordionGroup>
+  <Accordion title="stats:read:*" icon="chart-simple">
+    Read-only access to stats endpoints. Default scope for all API keys.
+    
+    **Allows:**
+    - Querying analytics data
+    - Accessing breakdowns and timeseries
+    - Reading realtime visitor counts
+    - Accessing site metadata
+  </Accordion>
+
+  <Accordion title="sites:read:*" icon="eye">
+    Read-only access to site configuration and metadata.
+    
+    **Allows:**
+    - Listing sites
+    - Reading site details
+    - Listing goals and custom properties
+    - Viewing site guests
+  </Accordion>
+
+  <Accordion title="sites:provision:*" icon="wrench">
+    Full access to site provisioning and configuration.
+    
+    **Allows:**
+    - All `sites:read:*` permissions
+    - Creating and deleting sites
+    - Managing goals and custom properties
+    - Configuring shared links
+    - Managing site guests
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  The scopes `stats:read:*` and `sites:read:*` are implicit and available to all API keys, even if not explicitly assigned.
+</Note>
+
+## Team-Scoped vs Legacy API Keys
+
+Plausible supports two types of API keys:
+
+### Team-Scoped Keys (Recommended)
+
+Modern API keys that are scoped to a specific team. These keys:
+
+- Only work with sites belonging to the associated team
+- Require the user to be a team member (not a guest)
+- Use team-based rate limiting
+- Are the only type available in the UI
+
+### Legacy Keys
+
+Older API keys created before team-scoping was introduced:
+
+- Work across all teams the user belongs to
+- Work for sites where the user is a guest
+- Use user-based rate limiting
+- Cannot be created through the UI anymore
+
+<Warning>
+  Legacy API keys are deprecated and maintained only for backwards compatibility. All new integrations should use team-scoped keys.
+</Warning>
+
+## API Endpoints Structure
+
+The API follows RESTful conventions:
+
+<CodeGroup>
+```bash Stats API v1
+# Realtime visitors
+GET /api/v1/stats/realtime/visitors?site_id=example.com
+
+# Aggregate metrics
+GET /api/v1/stats/aggregate?site_id=example.com&period=30d
+
+# Breakdown by property
+GET /api/v1/stats/breakdown?site_id=example.com&property=event:page
+
+# Timeseries data
+GET /api/v1/stats/timeseries?site_id=example.com&period=7d
+```
+
+```bash Stats API v2
+# Advanced query API
+POST /api/v2/query
+Content-Type: application/json
+
+{
+  "site_id": "example.com",
+  "metrics": ["visitors", "pageviews"],
+  "date_range": ["2024-01-01", "2024-01-31"]
+}
+```
+
+```bash Sites API
+# List all sites
+GET /api/v1/sites
+
+# Get site details
+GET /api/v1/sites/example.com
+
+# Create a new site
+POST /api/v1/sites
+
+# List goals for a site
+GET /api/v1/sites/goals?site_id=example.com
+```
+</CodeGroup>
+
+## Quick Start
+
+<Steps>
+  <Step title="Create an API key">
+    Navigate to your [account settings](https://plausible.io/settings/api-keys) and create a new API key with the appropriate scopes for your use case.
+  </Step>
+
+  <Step title="Make your first request">
+    Use the API key as a Bearer token in the Authorization header:
+
+    ```bash
+    curl https://plausible.io/api/v1/stats/aggregate \
+      -H "Authorization: Bearer YOUR_API_KEY" \
+      -G \
+      -d 'site_id=example.com' \
+      -d 'period=30d' \
+      -d 'metrics=visitors,pageviews'
+    ```
+  </Step>
+
+  <Step title="Handle the response">
+    All successful responses return JSON:
+
+    ```json
+    {
+      "results": {
+        "visitors": {"value": 12543},
+        "pageviews": {"value": 18291}
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Feature Availability
+
+Some API features require specific subscription plans:
+
+| Feature | Required Plan |
+|---------|---------------|
+| Stats API | Business plan or higher |
+| Sites API | Enterprise plan |
+| Custom Properties | Growth plan or higher |
+| Funnels API | Growth plan or higher |
+
+<Warning>
+  If your account doesn't have access to a required feature, API requests will return a `402 Payment Required` error with details about upgrading your plan.
+</Warning>
+
+## Response Formats
+
+All API responses use JSON format with consistent structure:
+
+### Success Response
+
+```json
+{
+  "results": { /* endpoint-specific data */ },
+  "meta": { /* optional pagination metadata */ },
+  "warning": "Optional warning message"
+}
+```
+
+### Error Response
+
+```json
+{
+  "error": "Description of what went wrong"
+}
+```
+
+HTTP status codes indicate the outcome:
+
+- `200` - Success
+- `400` - Bad request (invalid parameters)
+- `401` - Unauthorized (missing or invalid API key)
+- `402` - Payment required (feature not available on your plan)
+- `404` - Not found (site or resource doesn't exist)
+- `429` - Too many requests (rate limit exceeded)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/api/authentication">
+    Learn how to authenticate your API requests
+  </Card>
+  <Card title="Stats API" icon="chart-line" href="/api/stats-api">
+    Query analytics data and metrics
+  </Card>
+  <Card title="Rate Limits" icon="gauge" href="/api/rate-limits">
+    Understand rate limiting and best practices
+  </Card>
+  <Card title="Sites API" icon="globe" href="/api/sites-api">
+    Manage sites and configurations
+  </Card>
+</CardGroup>

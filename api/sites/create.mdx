@@ -1,0 +1,205 @@
+---
+title: Create Site
+description: Create a new site in your Plausible Analytics account
+---
+
+## POST /api/v1/sites
+
+Creates a new site with the specified domain and configuration. Requires the `sites:provision:*` API scope.
+
+<Warning>
+This endpoint is only available with a subscription that includes the Sites API feature.
+</Warning>
+
+### Authentication
+
+Requires a valid API key with the `sites:provision:*` scope passed in the `Authorization` header.
+
+### Request Body
+
+<ParamField body="domain" type="string" required>
+  The domain of the site to create. The domain will be automatically normalized (lowercased, stripped of protocol/www prefix).
+  
+  Examples: `example.com`, `blog.example.com`, `音乐.cn`
+  
+  International domain names (IDNs) are supported. URI reserved characters (`:`, `?`, `#`, `[`, `]`, `@`, `!`, `$`, `&`, `'`, `(`, `)`, `*`, `+`, `,`, `;`, `=`) are not allowed.
+</ParamField>
+
+<ParamField body="timezone" type="string" default="Etc/UTC">
+  The timezone for the site. Must be a valid IANA timezone identifier.
+  
+  Examples: `America/New_York`, `Europe/London`, `Asia/Tokyo`
+</ParamField>
+
+<ParamField body="team_id" type="string">
+  The identifier of the team to create the site under. If not provided, the site will be created under the user's default team.
+  
+  Note: If using a team-scoped API key, this parameter is ignored and the site is created under the API key's team.
+</ParamField>
+
+<ParamField body="tracker_script_configuration" type="object">
+  Optional configuration for the tracker script. If not provided, default values will be used.
+  
+  <Expandable title="Tracker Script Configuration Fields">
+    <ParamField body="tracker_script_configuration.installation_type" type="string">
+      The installation method used. Valid values: `manual`, `wordpress`, or `null`.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.track_404_pages" type="boolean" default={false}>
+      Enable tracking of 404 error pages.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.hash_based_routing" type="boolean" default={false}>
+      Enable hash-based routing for single-page applications.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.outbound_links" type="boolean" default={false}>
+      Enable automatic tracking of outbound link clicks.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.file_downloads" type="boolean" default={false}>
+      Enable automatic tracking of file downloads.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.revenue_tracking" type="boolean" default={false}>
+      Enable revenue tracking for goals.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.tagged_events" type="boolean" default={false}>
+      Enable CSS class-based event tracking.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.form_submissions" type="boolean" default={false}>
+      Enable automatic tracking of form submissions.
+    </ParamField>
+    
+    <ParamField body="tracker_script_configuration.pageview_props" type="boolean" default={false}>
+      Enable custom properties on pageviews.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+<ResponseField name="domain" type="string">
+  The domain of the created site.
+</ResponseField>
+
+<ResponseField name="timezone" type="string">
+  The timezone of the created site.
+</ResponseField>
+
+<ResponseField name="custom_properties" type="array">
+  List of allowed custom event properties for the site. Empty array by default.
+</ResponseField>
+
+<ResponseField name="tracker_script_configuration" type="object">
+  The tracker script configuration for the site.
+  
+  <Expandable title="Configuration Fields">
+    <ResponseField name="tracker_script_configuration.id" type="string">
+      The unique identifier for this configuration.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.installation_type" type="string">
+      The installation method (e.g., `manual`, `wordpress`, or `null`).
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.track_404_pages" type="boolean">
+      Whether 404 tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.hash_based_routing" type="boolean">
+      Whether hash-based routing is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.outbound_links" type="boolean">
+      Whether outbound link tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.file_downloads" type="boolean">
+      Whether file download tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.revenue_tracking" type="boolean">
+      Whether revenue tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.tagged_events" type="boolean">
+      Whether CSS class-based event tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.form_submissions" type="boolean">
+      Whether form submission tracking is enabled.
+    </ResponseField>
+    
+    <ResponseField name="tracker_script_configuration.pageview_props" type="boolean">
+      Whether pageview properties are enabled.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://plausible.io/api/v1/sites \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "domain": "example.com",
+    "timezone": "America/New_York"
+  }'
+```
+
+```bash With Tracker Configuration
+curl -X POST https://plausible.io/api/v1/sites \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "domain": "example.com",
+    "timezone": "Europe/London",
+    "tracker_script_configuration": {
+      "installation_type": "wordpress",
+      "file_downloads": true,
+      "outbound_links": true
+    }
+  }'
+```
+
+```json 200 Response
+{
+  "domain": "example.com",
+  "timezone": "America/New_York",
+  "custom_properties": [],
+  "tracker_script_configuration": {
+    "id": "abc123",
+    "installation_type": null,
+    "track_404_pages": false,
+    "hash_based_routing": false,
+    "outbound_links": false,
+    "file_downloads": false,
+    "revenue_tracking": false,
+    "tagged_events": false,
+    "form_submissions": false,
+    "pageview_props": false
+  }
+}
+```
+
+```json 400 Error - Invalid Domain
+{
+  "error": "domain: can't be blank"
+}
+```
+
+```json 400 Error - Invalid Timezone
+{
+  "error": "timezone: is invalid"
+}
+```
+
+```json 402 Error - Site Limit Reached
+{
+  "error": "Your account has reached the limit of 50 sites. To unlock more sites, please upgrade your subscription."
+}
+```
+</CodeGroup>

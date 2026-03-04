@@ -1,0 +1,333 @@
+---
+title: Shared Dashboard Links
+description: Create public or password-protected links to share your analytics dashboards
+---
+
+Shared links allow you to share your analytics dashboard with people who don't have a Plausible account. You can create multiple shared links for different audiences, each with optional password protection and segment filtering.
+
+## Creating Shared Links
+
+<Steps>
+  <Step title="Navigate to Shared Links">
+    Go to Site Settings > Visibility > Shared Links
+  </Step>
+  
+  <Step title="Create New Link">
+    Click "+ New link" to open the link creation form.
+  </Step>
+  
+  <Step title="Configure Link Settings">
+    Set up your shared link:
+    - **Name**: A descriptive name for the link (required)
+    - **Password**: Optional password protection
+    - **Segment**: Optional segment filter (requires segment configuration)
+  </Step>
+  
+  <Step title="Generate Link">
+    Click "Create shared link" to generate your unique URL.
+  </Step>
+</Steps>
+
+## Shared Link Schema
+
+```elixir
+schema "shared_links" do
+  belongs_to :site, Plausible.Site
+  field :name, :string
+  field :slug, :string  # Unique identifier in URL
+  field :password_hash, :string
+  belongs_to :segment, Plausible.Segments.Segment
+  
+  timestamps()
+end
+```
+
+## Link Configuration
+
+### Link Name
+
+Each shared link must have a unique name within your site:
+- Helps you identify the purpose of each link
+- Must be unique per site
+- Cannot use reserved special names
+
+<Warning>
+Some names are reserved by the system. If you try to use a reserved name, you'll see: "This name is reserved. Please choose another one"
+</Warning>
+
+### Unique Slug
+
+Each shared link gets a unique slug automatically:
+- Generated using Nanoid for security
+- Included in the shareable URL
+- Cannot be customized or changed
+
+**Example URL format:**
+```
+https://plausible.io/share/example.com?auth=abc123xyz
+```
+
+### Password Protection
+
+Add an extra layer of security with password protection:
+
+<Steps>
+  <Step title="Enable Password">
+    When creating or editing a shared link, enter a password in the password field.
+  </Step>
+  
+  <Step title="Password Hashing">
+    Passwords are securely hashed before storage using `Plausible.Auth.Password.hash()`.
+  </Step>
+  
+  <Step title="Share Credentials">
+    Share both the link URL and password with your intended recipients.
+  </Step>
+</Steps>
+
+<Info>
+Password-protected links will prompt visitors to enter the password before displaying analytics.
+</Info>
+
+**Check if a link is password-protected:**
+```elixir
+Plausible.Site.SharedLink.password_protected?(link)
+# Returns true if password_hash is set
+```
+
+### Segment Filtering
+
+Limit shared links to specific segments of your data:
+
+1. Create a segment in your site settings
+2. When creating a shared link, select the segment from the dropdown
+3. The shared link will only show data matching that segment
+
+**Check if a link is segment-filtered:**
+```elixir
+Plausible.Site.SharedLink.limited_to_segment?(link)
+# Returns true if segment_id is set
+```
+
+<Note>
+Segment-filtered links are perfect for showing specific data to different stakeholders, like mobile-only traffic or traffic from a specific country.
+</Note>
+
+## Managing Shared Links
+
+### Viewing All Links
+
+See all shared links for your site:
+1. Navigate to Site Settings > Visibility > Shared Links
+2. View a list of all active shared links with:
+   - Link name
+   - Creation date
+   - Password status (protected/open)
+   - Segment filter (if applied)
+
+### Editing Links
+
+Modify an existing shared link:
+1. Find the link in your shared links list
+2. Click the edit button
+3. Update the name, password, or segment
+4. Save changes
+
+<Warning>
+Changing the password will invalidate the old password immediately. Make sure to communicate the new password to authorized users.
+</Warning>
+
+### Removing Links
+
+Delete a shared link when it's no longer needed:
+
+<Steps>
+  <Step title="Locate the Link">
+    Find the shared link you want to remove in your shared links list.
+  </Step>
+  
+  <Step title="Delete Link">
+    Click the delete/remove button next to the link.
+  </Step>
+  
+  <Step title="Confirm Deletion">
+    Confirm that you want to delete this link. The URL will immediately stop working.
+  </Step>
+</Steps>
+
+<Info>
+Deleting a shared link is permanent. You'll need to create a new link if you want to share again.
+</Info>
+
+## Using Shared Links
+
+### Sharing with Others
+
+Once you've created a shared link:
+
+1. Copy the generated URL
+2. Share it via email, messaging, or embed it on your website
+3. If password-protected, share the password separately
+
+**Example:**
+```
+Link: https://plausible.io/share/example.com?auth=abc123xyz
+Password: securepass123
+```
+
+### Visitor Experience
+
+When someone accesses your shared link:
+
+**Without password:**
+- Immediately see the analytics dashboard
+- View data within any configured segment filters
+- No account required
+
+**With password:**
+1. Prompted to enter the password
+2. Password is validated
+3. Access granted if password matches
+4. Dashboard displayed
+
+<Note>
+Shared links show a read-only version of your dashboard. Visitors cannot modify settings or access other features.
+</Note>
+
+## Shared Link Constraints
+
+### Validation Rules
+
+When creating shared links:
+
+```elixir
+def changeset(link, attrs) do
+  link
+  |> cast(attrs, [:slug, :password, :name, :segment_id])
+  |> validate_required([:slug, :name])
+  |> unique_constraint(:slug)
+  |> unique_constraint(:name, name: :shared_links_site_id_name_index)
+  |> foreign_key_constraint(:segment_id)
+end
+```
+
+**Required fields:**
+- Name (must be unique per site)
+- Slug (auto-generated)
+
+**Optional fields:**
+- Password
+- Segment ID (must reference valid segment)
+
+### Uniqueness Constraints
+
+<Warning>
+Each shared link must have:
+- A globally unique slug
+- A site-unique name
+</Warning>
+
+If you try to create a link with a duplicate name, you'll receive an error.
+
+## Security Considerations
+
+### Password Best Practices
+
+<Steps>
+  <Step title="Use Strong Passwords">
+    Choose passwords that are:
+    - At least 12 characters long
+    - Include numbers, letters, and special characters
+    - Not easily guessable
+  </Step>
+  
+  <Step title="Rotate Passwords">
+    Periodically update passwords for long-lived shared links.
+  </Step>
+  
+  <Step title="Separate Distribution">
+    Send the link and password through different channels for added security.
+  </Step>
+</Steps>
+
+### Link Security
+
+- Slugs are generated with Nanoid for cryptographic randomness
+- Passwords are hashed with secure algorithms (never stored in plain text)
+- Links can be deleted immediately if compromised
+- No account creation required, reducing attack surface
+
+<Info>
+Shared links provide view-only access. Recipients cannot modify settings, add goals, or access other administrative features.
+</Info>
+
+## Common Use Cases
+
+### Public Dashboard
+
+Share your traffic stats publicly:
+```
+Name: Public Stats
+Password: (none)
+Segment: (none)
+```
+
+Perfect for transparent public analytics.
+
+### Client Reporting
+
+Create protected links for clients:
+```
+Name: Client ABC - Monthly Report
+Password: client_password_123
+Segment: (none or specific segment)
+```
+
+### Team Sharing
+
+Share with team members outside your organization:
+```
+Name: Marketing Team View
+Password: team_access_2024
+Segment: Marketing Traffic
+```
+
+### Investor Updates
+
+Provide metrics to investors or stakeholders:
+```
+Name: Investor Dashboard
+Password: secure_investor_access
+Segment: Key Metrics
+```
+
+## Troubleshooting
+
+**Link not working?**
+- Verify the full URL was copied correctly
+- Check if the link was deleted
+- Ensure any required password is correct
+
+**Can't create link?**
+- Check that the name is unique
+- Ensure the name isn't reserved
+- Verify segment exists if using segment filtering
+
+**Password issues?**
+- Passwords are case-sensitive
+- Try resetting the password
+- Ensure no extra spaces when entering password
+
+## Best Practices
+
+<Note>
+Follow these recommendations for effective shared link management:
+</Note>
+
+- **Use descriptive names**: Make it clear who the link is for and what it shows
+- **Apply passwords for sensitive data**: Always password-protect links with sensitive analytics
+- **Leverage segments**: Create focused views for different audiences
+- **Regular audits**: Periodically review and remove unused links
+- **Track link usage**: Note who has access to which links
+- **Rotate passwords**: Update passwords periodically for long-term links
+- **Delete promptly**: Remove links immediately when no longer needed

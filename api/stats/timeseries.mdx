@@ -1,0 +1,432 @@
+---
+title: Timeseries Stats
+description: Get time-series data showing how your metrics change over time
+---
+
+The timeseries endpoint allows you to retrieve statistics over time, broken down by a specified time interval. Use this to create charts and graphs showing how your traffic and engagement metrics change over time.
+
+## Endpoint
+
+```
+GET https://plausible.io/api/v1/stats/timeseries
+```
+
+## Authentication
+
+All requests must include your API key in the `Authorization` header:
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+## Query Parameters
+
+<ParamField query="site_id" type="string" required>
+  The domain of your site as configured in Plausible. Example: `example.com`
+</ParamField>
+
+<ParamField query="period" type="string">
+  The time period for the query. Valid values:
+  - `day` - Current day
+  - `7d` - Last 7 days
+  - `30d` - Last 30 days
+  - `month` - Current month
+  - `6mo` - Last 6 months
+  - `12mo` - Last 12 months
+  - `custom` - Custom date range (requires `date` parameter)
+  
+  Defaults to `30d` if not specified.
+</ParamField>
+
+<ParamField query="date" type="string">
+  Date or date range in ISO-8601 format.
+  
+  For single date periods: `2024-01-01`
+  
+  For custom periods: `2024-01-01,2024-01-31` (comma-separated start and end dates)
+  
+  Required when `period=custom`.
+</ParamField>
+
+<ParamField query="interval" type="string">
+  The time interval for grouping data points. Valid values:
+  - `day` - Group by day
+  - `month` - Group by month
+  
+  If not specified, the interval is automatically selected based on the period:
+  - Periods up to 1 day use `hour` intervals (in the dashboard)
+  - Periods up to 6 months use `day` intervals
+  - Longer periods use `month` intervals
+  
+  Note: The `date` value is deprecated and automatically converted to `day`.
+</ParamField>
+
+<ParamField query="metrics" type="string">
+  Comma-separated list of metrics to retrieve. Defaults to `visitors` if not specified.
+  
+  Available metrics:
+  - `visitors` - Unique visitors
+  - `visits` - Total visits (sessions)
+  - `pageviews` - Total pageviews
+  - `events` - Total events
+  - `bounce_rate` - Bounce rate percentage
+  - `visit_duration` - Average visit duration in seconds
+  - `views_per_visit` - Average pageviews per visit
+  - `conversion_rate` - Goal conversion rate (requires goal filter)
+  - `time_on_page` - Average time on page in seconds (requires page filter)
+  
+  Example: `visitors,pageviews,bounce_rate`
+  
+  Note: Each metric can only be specified once.
+</ParamField>
+
+<ParamField query="filters" type="string">
+  Filter the data by specific dimensions. Format: `dimension==value` for equality or `dimension!=value` for negation.
+  
+  Multiple filters can be combined with semicolons (`;`).
+  
+  Multiple values for the same dimension can be combined with pipes (`|`).
+  
+  Wildcard matching is supported using asterisks (`*`).
+  
+  Examples:
+  - `event:page==/blog` - Filter to a specific page
+  - `visit:country==US` - Filter to United States traffic
+  - `visit:source==Google|Twitter` - Filter to Google or Twitter traffic
+  - `event:page==/blog**` - Wildcard match for blog pages
+</ParamField>
+
+<ParamField query="compare" type="string">
+  Enable comparison with previous period. Set to `previous_period` to compare with the equivalent previous time period.
+</ParamField>
+
+## Properties
+
+Available dimensions for filtering:
+
+### Event Properties
+- `event:page` - Page path
+- `event:name` - Custom event name
+- `event:goal` - Goal name (pageview or custom event goal)
+- `event:hostname` - Hostname
+- `event:props:*` - Custom event properties (e.g., `event:props:author`)
+
+### Visit (Session) Properties
+- `visit:source` - Traffic source
+- `visit:channel` - Traffic channel
+- `visit:country` - Country code (ISO 3166-1 alpha-2)
+- `visit:region` - Region code
+- `visit:city` - City name
+- `visit:entry_page` - Entry page path
+- `visit:exit_page` - Exit page path
+- `visit:referrer` - Referrer URL
+- `visit:utm_medium` - UTM medium
+- `visit:utm_source` - UTM source
+- `visit:utm_campaign` - UTM campaign
+- `visit:utm_content` - UTM content
+- `visit:utm_term` - UTM term
+- `visit:device` - Device type (Desktop, Mobile, Tablet)
+- `visit:os` - Operating system
+- `visit:os_version` - Operating system version
+- `visit:browser` - Browser name
+- `visit:browser_version` - Browser version
+
+## Metric Constraints
+
+Certain metrics have specific requirements:
+
+- **`conversion_rate`** - Can only be queried with a goal filter (`event:goal==`)
+- **`time_on_page`** - Can only be queried with a page filter
+- **Session metrics** (`visits`, `bounce_rate`, `visit_duration`, `views_per_visit`) - Cannot be queried when filtering by `event:name`, `event:goal`, or custom event properties
+
+## Response
+
+<ResponseField name="results" type="array">
+  Array of time series data points, one for each interval in the specified period.
+  
+  <Expandable title="properties">
+    <ResponseField name="date" type="string">
+      The date or timestamp for this data point.
+      
+      Format varies by interval:
+      - For `day` interval: ISO date string (e.g., `"2024-01-15"`)
+      - For `month` interval: Month string (e.g., `"2024-01-01"`)
+    </ResponseField>
+    
+    <ResponseField name="[metric]" type="number">
+      Metric values as specified in the `metrics` parameter.
+      
+      One field for each requested metric (e.g., `visitors`, `pageviews`, `bounce_rate`).
+      
+      Default value is returned for intervals with no data (0 for counts, 0.0 for rates, null for durations).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="warning" type="string">
+  Optional warning message (e.g., when imported stats are excluded)
+</ResponseField>
+
+## Examples
+
+### Basic Timeseries
+
+<CodeGroup>
+```bash cURL
+curl "https://plausible.io/api/v1/stats/timeseries?site_id=example.com&period=7d&metrics=visitors,pageviews" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://plausible.io/api/v1/stats/timeseries?site_id=example.com&period=7d&metrics=visitors,pageviews',
+  {
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY'
+    }
+  }
+);
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://plausible.io/api/v1/stats/timeseries',
+    params={
+        'site_id': 'example.com',
+        'period': '7d',
+        'metrics': 'visitors,pageviews'
+    },
+    headers={'Authorization': 'Bearer YOUR_API_KEY'}
+)
+data = response.json()
+```
+</CodeGroup>
+
+<CodeGroup>
+```json Response
+{
+  "results": [
+    {
+      "date": "2024-01-08",
+      "visitors": 1234,
+      "pageviews": 2876
+    },
+    {
+      "date": "2024-01-09",
+      "visitors": 1456,
+      "pageviews": 3201
+    },
+    {
+      "date": "2024-01-10",
+      "visitors": 1123,
+      "pageviews": 2543
+    },
+    {
+      "date": "2024-01-11",
+      "visitors": 1567,
+      "pageviews": 3456
+    },
+    {
+      "date": "2024-01-12",
+      "visitors": 1789,
+      "pageviews": 3987
+    },
+    {
+      "date": "2024-01-13",
+      "visitors": 1345,
+      "pageviews": 2987
+    },
+    {
+      "date": "2024-01-14",
+      "visitors": 1654,
+      "pageviews": 3654
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Monthly Timeseries with Custom Range
+
+<CodeGroup>
+```bash cURL
+curl "https://plausible.io/api/v1/stats/timeseries?site_id=example.com&period=custom&date=2024-01-01,2024-06-30&interval=month&metrics=visitors,visits,bounce_rate" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+<CodeGroup>
+```json Response
+{
+  "results": [
+    {
+      "date": "2024-01-01",
+      "visitors": 45678,
+      "visits": 52341,
+      "bounce_rate": 62.3
+    },
+    {
+      "date": "2024-02-01",
+      "visitors": 48234,
+      "visits": 55123,
+      "bounce_rate": 59.8
+    },
+    {
+      "date": "2024-03-01",
+      "visitors": 51234,
+      "visits": 58976,
+      "bounce_rate": 58.4
+    },
+    {
+      "date": "2024-04-01",
+      "visitors": 49876,
+      "visits": 57234,
+      "bounce_rate": 60.1
+    },
+    {
+      "date": "2024-05-01",
+      "visitors": 53421,
+      "visits": 61234,
+      "bounce_rate": 57.9
+    },
+    {
+      "date": "2024-06-01",
+      "visitors": 55123,
+      "visits": 63456,
+      "bounce_rate": 56.2
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### With Filters
+
+<CodeGroup>
+```bash cURL
+curl "https://plausible.io/api/v1/stats/timeseries?site_id=example.com&period=30d&metrics=visitors,events&filters=visit:country==US;event:page==/pricing" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+<CodeGroup>
+```json Response
+{
+  "results": [
+    {
+      "date": "2024-01-01",
+      "visitors": 234,
+      "events": 456
+    },
+    {
+      "date": "2024-01-02",
+      "visitors": 198,
+      "events": 387
+    },
+    {
+      "date": "2024-01-03",
+      "visitors": 267,
+      "events": 512
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Goal Conversion Over Time
+
+<CodeGroup>
+```bash cURL
+curl "https://plausible.io/api/v1/stats/timeseries?site_id=example.com&period=7d&metrics=visitors,conversion_rate&filters=event:goal==Signup" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+<CodeGroup>
+```json Response
+{
+  "results": [
+    {
+      "date": "2024-01-08",
+      "visitors": 234,
+      "conversion_rate": 3.2
+    },
+    {
+      "date": "2024-01-09",
+      "visitors": 267,
+      "conversion_rate": 3.8
+    },
+    {
+      "date": "2024-01-10",
+      "visitors": 198,
+      "conversion_rate": 2.9
+    },
+    {
+      "date": "2024-01-11",
+      "visitors": 312,
+      "conversion_rate": 4.1
+    },
+    {
+      "date": "2024-01-12",
+      "visitors": 289,
+      "conversion_rate": 3.5
+    },
+    {
+      "date": "2024-01-13",
+      "visitors": 245,
+      "conversion_rate": 3.3
+    },
+    {
+      "date": "2024-01-14",
+      "visitors": 278,
+      "conversion_rate": 3.7
+    }
+  ]
+}
+```
+</CodeGroup>
+
+## Error Responses
+
+<ResponseField name="error" type="string">
+  Error message describing what went wrong
+</ResponseField>
+
+### Common Errors
+
+**400 Bad Request** - Invalid interval
+```json
+{
+  "error": "Error parsing `interval` parameter: invalid interval `week`. Valid intervals are `day`, `month`"
+}
+```
+
+**400 Bad Request** - Invalid period
+```json
+{
+  "error": "Error parsing `period` parameter: invalid period `invalid`. Please find accepted values in our docs: https://plausible.io/docs/stats-api#time-periods"
+}
+```
+
+**400 Bad Request** - Invalid date format
+```json
+{
+  "error": "Invalid format for `date` parameter. When using a custom period, please include two ISO-8601 formatted dates joined by a comma. See https://plausible.io/docs/stats-api#time-periods"
+}
+```
+
+**400 Bad Request** - Metric validation failed
+```json
+{
+  "error": "Metric `conversion_rate` can only be queried in a goal breakdown or with a goal filter"
+}
+```
+
+## Notes
+
+- The timeseries endpoint always returns a data point for each interval in the specified period, even if there was no traffic. Missing data is filled with default values (0 for counts, 0.0 for rates, null for durations).
+- When using comparison mode, the comparison data is not included in the timeseries response format. Use the aggregate or breakdown endpoints for comparison data.
+- The response is ordered chronologically by date.

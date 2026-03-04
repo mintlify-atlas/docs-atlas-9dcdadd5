@@ -1,0 +1,460 @@
+---
+title: Custom Properties
+description: Add metadata and context to your events with custom properties in Plausible Analytics
+---
+
+## Overview
+
+Custom properties (also called custom props or event metadata) allow you to attach additional context to your pageviews and custom events. Properties enable you to segment and filter your analytics data by dimensions that matter to your business.
+
+## Use Cases
+
+- Track which author wrote blog posts receiving the most traffic
+- Identify which pricing tier users are viewing
+- Segment users by membership level or feature access
+- Track A/B test variants and their performance
+- Monitor different product categories or SKUs
+- Analyze user journey stages
+
+## Property Format
+
+Custom properties are key-value pairs where both keys and values must be strings:
+
+```javascript
+{
+  author: 'Jane Smith',
+  category: 'Technology',
+  tier: 'premium'
+}
+```
+
+<Warning>
+  All property values must be strings. Numbers and booleans will be automatically converted to strings.
+</Warning>
+
+## Adding Properties to Events
+
+### Custom Events
+
+Add properties when tracking custom events:
+
+<CodeGroup>
+```javascript Script Tag
+window.plausible('Signup', {
+  props: {
+    plan: 'premium',
+    method: 'google',
+    trial: 'true'
+  }
+});
+```
+
+```javascript NPM Package
+import { track } from '@plausible-analytics/tracker'
+
+track('Signup', {
+  props: {
+    plan: 'premium',
+    method: 'google',
+    trial: 'true'
+  }
+});
+```
+</CodeGroup>
+
+### Pageviews
+
+Add properties to pageview events in several ways:
+
+#### Per-Pageview Properties
+
+Manually track pageviews with properties:
+
+```javascript
+import { init, track } from '@plausible-analytics/tracker'
+
+// Disable auto-capture
+init({
+  domain: 'example.com',
+  autoCapturePageviews: false
+});
+
+// Track pageview with properties
+track('pageview', {
+  props: {
+    author: 'Jane Smith',
+    category: 'Technology'
+  }
+});
+```
+
+#### Global Properties via Config
+
+Set properties for all events using the `customProperties` config option:
+
+<Tabs>
+  <Tab title="Static Properties">
+    ```javascript
+    import { init } from '@plausible-analytics/tracker'
+
+    init({
+      domain: 'example.com',
+      customProperties: {
+        app_version: '2.0.5',
+        environment: 'production'
+      }
+    });
+    ```
+
+    All events will include these properties automatically.
+  </Tab>
+
+  <Tab title="Dynamic Properties">
+    ```javascript
+    import { init } from '@plausible-analytics/tracker'
+
+    init({
+      domain: 'example.com',
+      customProperties: (eventName) => ({
+        title: document.title,
+        path: window.location.pathname,
+        event_type: eventName
+      })
+    });
+    ```
+
+    Properties are computed when each event is tracked.
+  </Tab>
+</Tabs>
+
+#### Script Attributes (Legacy)
+
+For the script tag method, use `event-` attributes:
+
+```html
+<script defer 
+  data-domain="example.com"
+  event-author="Jane Smith"
+  event-category="Technology"
+  src="https://plausible.io/js/script.pageview-props.js"></script>
+```
+
+<Note>
+  You must use the `script.pageview-props.js` variant to enable pageview properties via script attributes.
+</Note>
+
+## Property Constraints
+
+### Naming Rules
+
+Property keys must:
+- Contain only letters, numbers, and underscores
+- Be between 1 and 300 characters long
+- Not start with a number
+
+```javascript
+// ✅ Valid property names
+{
+  author: 'John',
+  post_category: 'Tech',
+  variant_2: 'blue'
+}
+
+// ❌ Invalid property names
+{
+  'author-name': 'John',  // Contains hyphen
+  '2nd_variant': 'blue',  // Starts with number
+  '': 'value'             // Empty string
+}
+```
+
+### Value Limits
+
+Property values:
+- Must be strings
+- Maximum length: 2000 characters
+- Empty strings are allowed
+
+```javascript
+// ✅ Valid
+{
+  author: 'Jane Smith',
+  category: '',  // Empty is OK
+  count: '42'    // Number as string
+}
+
+// ❌ Invalid
+{
+  author: 'A'.repeat(3000),  // Too long
+  count: 42,                 // Must be string
+  active: true               // Must be string
+}
+```
+
+### Limits per Event
+
+- Maximum 30 custom properties per event
+- Properties exceeding limits are silently dropped
+
+## Tagged Events with Properties
+
+Add properties to tagged elements using CSS classes:
+
+```html
+<button 
+  class="plausible-event-name=Signup 
+         plausible-event-plan=premium 
+         plausible-event-method=email 
+         plausible-event-source=homepage">
+  Sign Up Now
+</button>
+```
+
+This tracks a "Signup" event with:
+
+```javascript
+{
+  plan: 'premium',
+  method: 'email',
+  source: 'homepage'
+}
+```
+
+### Spaces in Values
+
+Use `+` for spaces in property values:
+
+```html
+<a href="/pricing" 
+   class="plausible-event-name=View+Pricing 
+          plausible-event-source=Hero+Section">
+  See Pricing
+</a>
+```
+
+Results in:
+
+```javascript
+{
+  source: 'Hero Section'
+}
+```
+
+## Server-side Properties
+
+When using the Events API, include properties in the `p` field:
+
+```json
+{
+  "n": "Purchase",
+  "u": "https://example.com/checkout/success",
+  "d": "example.com",
+  "p": {
+    "product": "Pro Plan",
+    "billing_cycle": "yearly",
+    "discount_code": "SAVE20"
+  }
+}
+```
+
+## Viewing Property Data
+
+Custom properties appear in your Plausible dashboard when:
+
+1. Events with properties are tracked
+2. You configure the property as a custom dimension in your site settings
+3. You view event details or create custom reports
+
+Properties enable breakdowns like:
+- "Signup" events by `plan` property (free vs premium)
+- "Pageview" by `author` (which authors get most traffic)
+- "Purchase" by `product` (top-selling products)
+
+## Common Patterns
+
+### Blog Analytics
+
+Track blog post metadata:
+
+```javascript
+track('pageview', {
+  props: {
+    author: 'Jane Smith',
+    category: 'Technology',
+    published_date: '2024-01-15',
+    word_count: '1500',
+    tags: 'analytics,privacy'
+  }
+});
+```
+
+### User Segmentation
+
+```javascript
+track('pageview', {
+  props: {
+    user_tier: 'premium',
+    subscription_status: 'active',
+    account_age: '30-60days'
+  }
+});
+```
+
+### A/B Testing
+
+```javascript
+const variant = Math.random() < 0.5 ? 'A' : 'B';
+
+track('pageview', {
+  props: {
+    ab_test: 'homepage_hero',
+    variant: variant
+  }
+});
+
+track('Signup', {
+  props: {
+    ab_test: 'homepage_hero',
+    variant: variant
+  }
+});
+```
+
+### E-commerce
+
+```javascript
+track('Add to Cart', {
+  props: {
+    product_name: 'Premium Widget',
+    product_id: 'WIDGET-001',
+    category: 'Widgets',
+    price: '29.99',
+    quantity: '2'
+  }
+});
+
+track('Purchase', {
+  props: {
+    order_id: 'ORD-12345',
+    items_count: '3',
+    payment_method: 'credit_card',
+    shipping_method: 'express'
+  },
+  revenue: {
+    amount: 89.97,
+    currency: 'USD'
+  }
+});
+```
+
+### Feature Usage
+
+```javascript
+track('Feature Used', {
+  props: {
+    feature_name: 'export_data',
+    format: 'csv',
+    data_range: '30days',
+    rows_exported: '1500'
+  }
+});
+```
+
+### Content Engagement
+
+```javascript
+track('Video Play', {
+  props: {
+    video_title: 'Product Demo',
+    video_duration: '180',
+    video_type: 'tutorial',
+    player_position: 'inline'
+  }
+});
+
+track('Article Read', {
+  props: {
+    reading_time: '5min',
+    scroll_depth: '75',
+    article_type: 'guide'
+  }
+});
+```
+
+## Transform Request
+
+Modify or filter events and properties before sending:
+
+```javascript
+import { init } from '@plausible-analytics/tracker'
+
+init({
+  domain: 'example.com',
+  transformRequest: (payload) => {
+    // Remove sensitive data from URLs
+    if (payload.u) {
+      payload.u = payload.u.replace(/email=[^&]+/, 'email=REDACTED');
+    }
+
+    // Add computed properties
+    if (!payload.p) payload.p = {};
+    payload.p.timestamp = new Date().toISOString();
+
+    // Filter out certain events
+    if (payload.n === 'Debug Event') {
+      return null;  // Don't send this event
+    }
+
+    return payload;
+  }
+});
+```
+
+Returning `null` or any falsy value from `transformRequest` will prevent the event from being sent.
+
+## Best Practices
+
+<Steps>
+  <Step title="Keep Values Consistent">
+    Use consistent casing and formatting:
+    - ✅ `plan: 'premium'` everywhere
+    - ❌ `plan: 'Premium'` and `plan: 'PREMIUM'` in different places
+  </Step>
+
+  <Step title="Don't Track PII">
+    Never include personally identifiable information:
+    - ❌ Email addresses, phone numbers, full names
+    - ✅ User IDs, categories, anonymized segments
+  </Step>
+
+  <Step title="Limit Property Count">
+    Only track properties you'll actually use for analysis. Each property adds to the event size.
+  </Step>
+
+  <Step title="Use Descriptive Keys">
+    Choose clear property names:
+    - ✅ `subscription_tier`, `payment_method`
+    - ❌ `t`, `pm`, `val1`
+  </Step>
+
+  <Step title="String Formatting">
+    Convert values to strings explicitly to avoid issues:
+    ```javascript
+    props: {
+      quantity: quantity.toString(),
+      price: price.toFixed(2)
+    }
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Events" icon="chart-line" href="/integration/custom-events">
+    Learn about tracking custom events
+  </Card>
+  <Card title="Events API" icon="code" href="/integration/events-api">
+    Server-side tracking with properties
+  </Card>
+</CardGroup>

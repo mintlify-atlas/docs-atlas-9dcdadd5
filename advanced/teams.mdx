@@ -1,0 +1,224 @@
+---
+title: Team Collaboration
+description: Manage team members, roles, and permissions for collaborative analytics
+---
+
+Plausible Analytics supports team collaboration, allowing multiple users to work together on website analytics. You can invite team members, assign roles, and manage access to your sites.
+
+## Team Roles
+
+Plausible offers six different team roles with varying levels of access:
+
+<Note>
+Roles determine what actions team members can perform across all sites in your team or specific sites as a guest.
+</Note>
+
+### Owner
+
+Owners have full administrative control over the team:
+- Manage billing and subscription
+- Invite and remove team members
+- Transfer site ownership
+- Delete the team
+- Full access to all sites
+
+### Admin
+
+Admins can manage team members and sites but cannot access billing:
+- Invite and remove team members (except owners)
+- Manage site settings
+- Full access to all sites
+- Cannot modify billing or subscription
+
+### Billing
+
+Billing members have specialized access for financial management:
+- View and manage billing information
+- Update subscription and payment methods
+- View usage and invoices
+- No access to analytics data by default
+
+### Editor
+
+Editors can modify site configurations:
+- Edit site settings
+- Manage goals and funnels
+- Configure email reports
+- View analytics for assigned sites
+
+### Viewer
+
+Viewers have read-only access:
+- View analytics dashboards
+- Export data
+- Cannot modify any settings
+- Can be assigned to specific sites as guests
+
+### Guest
+
+Guests have limited access to specific sites only:
+- Can be assigned as viewer or editor for individual sites
+- No access to team-wide settings
+- Perfect for contractors or external collaborators
+
+## Inviting Team Members
+
+<Steps>
+  <Step title="Navigate to Team Settings">
+    Go to your team settings page to manage members.
+  </Step>
+  
+  <Step title="Send Invitation">
+    Click "Invite member" and enter the email address of the person you want to invite.
+  </Step>
+  
+  <Step title="Select Role">
+    Choose the appropriate role for the new team member:
+    - **Owner/Admin/Billing**: Full team access
+    - **Editor/Viewer**: Access to all sites with specific permissions
+    - **Guest**: Access to specific sites only (configure after invitation)
+  </Step>
+  
+  <Step title="Invitation Delivery">
+    An email invitation will be sent to the recipient. They can accept the invitation to join your team.
+  </Step>
+</Steps>
+
+## Guest Memberships
+
+Guest memberships allow you to grant site-specific access without giving team-wide permissions.
+
+### Creating Guest Access
+
+When you invite someone as a guest, you can:
+1. Select specific sites they can access
+2. Assign them as either a **viewer** or **editor** for each site
+3. Grant different roles for different sites
+
+<Info>
+Guests only see the sites they've been explicitly granted access to, making this ideal for clients or external collaborators.
+</Info>
+
+### Guest Capabilities
+
+**Guest Viewers** can:
+- View analytics for assigned sites
+- Create shared links
+- Export data
+
+**Guest Editors** can:
+- All viewer capabilities
+- Configure site settings
+- Manage goals and custom events
+- Set up email reports
+
+## Team Policies
+
+Team owners can configure team-wide policies to enforce security requirements.
+
+### Two-Factor Authentication (2FA)
+
+Enforce 2FA for all team members:
+
+```
+force_2fa: true/false
+```
+
+When enabled, all team members must set up two-factor authentication to access the team.
+
+<Warning>
+Enabling force_2fa will require all existing members to configure 2FA on their next login.
+</Warning>
+
+### Single Sign-On (SSO)
+
+For enterprise teams, SSO can be configured with the following options:
+
+**SSO Enforcement Modes:**
+- `none`: SSO is optional (default)
+- `all_but_owners`: Required for all members except owners
+
+**SSO Default Role:**
+Set the default role for newly provisioned SSO accounts:
+- Viewer (default)
+- Editor
+- Admin
+- Billing
+
+**SSO Session Timeout:**
+Configure session timeout (30 minutes to 12 hours, default: 6 hours)
+
+<Info>
+SSO policies apply to all team integrations. The "all_but_owners" mode provides an escape hatch if your identity provider experiences issues.
+</Info>
+
+## Site Transfers
+
+Owners can transfer sites between teams:
+
+1. Navigate to the site settings
+2. Select "Transfer site"
+3. Choose the destination team
+4. Confirm the transfer
+
+<Warning>
+Site transfers are permanent and will move all historical data to the new team.
+</Warning>
+
+## Managing Team Members
+
+### Viewing Members
+
+See all team members with their:
+- Email address
+- Current role
+- Join date
+- Guest site access (if applicable)
+
+### Updating Roles
+
+Owners and admins can change member roles:
+1. Find the member in the team settings
+2. Click on their current role
+3. Select a new role from the dropdown
+4. Changes take effect immediately
+
+### Removing Members
+
+<Steps>
+  <Step title="Select Member">
+    Navigate to team settings and find the member to remove.
+  </Step>
+  
+  <Step title="Remove Access">
+    Click the remove button next to their name.
+  </Step>
+  
+  <Step title="Confirm Removal">
+    Confirm that you want to remove this member. They will immediately lose access to all team sites.
+  </Step>
+</Steps>
+
+## Best Practices
+
+<Note>
+Follow these best practices for effective team collaboration:
+</Note>
+
+- **Use the principle of least privilege**: Grant the minimum access level needed
+- **Prefer guest access for external collaborators**: Keeps your team structure clean
+- **Maintain at least two owners**: Prevents lockout if an owner leaves
+- **Regularly audit team members**: Remove inactive users
+- **Enable 2FA**: Adds an extra layer of security
+- **Use SSO for large teams**: Centralizes authentication and improves security
+
+## Trial Period
+
+New teams receive a trial period:
+
+```elixir
+# Community Edition: 100 years trial
+# Enterprise Edition: 30 days trial
+```
+
+During the trial, teams have full access to all features. After the trial expires, you'll need an active subscription to continue using the service.

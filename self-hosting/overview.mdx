@@ -1,0 +1,151 @@
+---
+title: Self-Hosting Overview
+description: Learn about Plausible Analytics Community Edition and how to self-host your analytics platform
+---
+
+## What is Plausible Community Edition?
+
+Plausible Community Edition (CE) is the free and open-source version of Plausible Analytics that you can self-host on your own infrastructure. It provides privacy-focused web analytics without relying on cloud services.
+
+<Info>
+  Plausible CE is licensed under the GNU Affero General Public License Version 3 (AGPLv3). The JavaScript tracker is released under the MIT license.
+</Info>
+
+## Cloud vs Community Edition
+
+Before deciding to self-host, consider the differences between Plausible Cloud and Community Edition:
+
+| Feature | Plausible Cloud | Community Edition |
+|---------|----------------|-------------------|
+| **Infrastructure Management** | Fully managed with worldwide CDN, backups, security, and maintenance | Self-managed - you handle installation, upgrades, backups, and security |
+| **Release Schedule** | Continuous deployment with new features multiple times per week | Long-term releases published twice per year |
+| **Premium Features** | All features including funnels, ecommerce revenue, SSO, and Sites API | Premium features not available |
+| **Bot Filtering** | Advanced filtering with ~32K data center IP ranges excluded | Basic User-Agent and referrer spam filtering |
+| **Server Location** | EU-owned infrastructure (Germany) | Deploy anywhere you choose |
+| **Data Access** | Dashboard, CSV export, Stats API, Looker Studio connector | Direct ClickHouse database access available |
+| **Support** | Premium support from creators | Community-supported only |
+| **Costs** | Subscription fee based on traffic | Server and infrastructure costs |
+
+## Technology Stack
+
+Plausible Analytics is built with:
+
+- **Backend**: Elixir/Phoenix application
+- **Databases**: 
+  - PostgreSQL for general application data
+  - ClickHouse for analytics data and stats
+- **Frontend**: React with TailwindCSS
+- **Container**: Alpine Linux-based Docker image
+
+## System Requirements
+
+### Minimum Requirements
+
+<CardGroup cols={2}>
+  <Card title="PostgreSQL" icon="database">
+    Version 12 or higher for application data storage
+  </Card>
+  <Card title="ClickHouse" icon="chart-line">
+    Version 21 or higher for analytics data storage
+  </Card>
+  <Card title="Memory" icon="memory">
+    At least 2GB RAM for small deployments
+  </Card>
+  <Card title="Storage" icon="hard-drive">
+    Varies based on traffic volume (plan for growth)
+  </Card>
+</CardGroup>
+
+### Recommended Infrastructure
+
+For production deployments:
+
+- **CPU**: 2+ cores
+- **RAM**: 4GB+ (more for high-traffic sites)
+- **Storage**: SSD with regular backups
+- **Network**: Reliable internet connection with static IP (if using HTTPS)
+
+## Key Features
+
+<AccordionGroup>
+  <Accordion title="Privacy-Focused Analytics">
+    - No cookies or persistent identifiers
+    - No personal data or IP address storage
+    - GDPR, CCPA, and PECR compliant by default
+    - No data shared with third parties
+  </Accordion>
+
+  <Accordion title="Lightweight Tracking">
+    - Small JavaScript tracker (< 1KB)
+    - Fast page load times
+    - Optional Events API for server-side tracking
+    - Support for single-page applications
+  </Accordion>
+
+  <Accordion title="Comprehensive Metrics">
+    - Real-time visitor tracking
+    - Page views and unique visitors
+    - Traffic sources and referrers
+    - Geographic data (countries, regions, cities)
+    - Device, browser, and OS statistics
+    - Custom event tracking
+    - Goal conversions
+  </Accordion>
+
+  <Accordion title="Team Collaboration">
+    - Multiple user roles (admin, viewer, editor)
+    - Shared dashboards
+    - Public stats links
+    - Email and traffic reports
+  </Accordion>
+</AccordionGroup>
+
+## Support and Community
+
+<Warning>
+  Community Edition is community-supported only. There are no guarantees of support from the Plausible creators for self-hosting issues.
+</Warning>
+
+Get help with self-hosting:
+
+- **GitHub Discussions**: [Self-hosted support forum](https://github.com/plausible/analytics/discussions/categories/self-hosted-support)
+- **Documentation**: [Community Edition Wiki](https://github.com/plausible/community-edition/)
+- **Issue Tracker**: Report bugs on GitHub
+- **Community Forum**: Connect with other self-hosters
+
+## Funding Open Source
+
+Plausible's only source of funding is the premium managed cloud service. When you self-host:
+
+- You pay for your own infrastructure costs
+- You get full control over your data and deployment
+- You never pay licensing fees to Plausible
+- Consider supporting the project if you find value in CE
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/self-hosting/installation">
+    Set up Plausible CE with Docker
+  </Card>
+  <Card title="Configuration" icon="gear" href="/self-hosting/configuration">
+    Configure environment variables
+  </Card>
+  <Card title="Upgrade Guide" icon="arrow-up" href="/self-hosting/upgrade">
+    Upgrade to newer versions
+  </Card>
+  <Card title="Maintenance" icon="wrench" href="/self-hosting/maintenance">
+    Operations and troubleshooting
+  </Card>
+</CardGroup>
+
+## License Information
+
+Plausible Community Edition is open source under AGPLv3:
+
+- Source code must be made available if you modify and distribute
+- Network use (SaaS) counts as distribution
+- JavaScript tracker is MIT licensed (no virality)
+- Plausible name and logo are trademarked
+
+Copyright (c) 2018-present Plausible Insights OÜ

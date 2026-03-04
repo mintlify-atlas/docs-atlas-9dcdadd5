@@ -1,80 +1,319 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "Quick Start Guide"
+description: "Get started with Plausible Analytics in 2 minutes. Add privacy-friendly analytics to your website and see your first pageview."
 ---
 
-## Get started in three steps
+## Get Up and Running Fast
 
-Get your documentation site running locally and make your first customization.
+This guide will help you set up Plausible Analytics and start tracking your website traffic in just a few minutes. No complex configuration needed.
 
-### Step 1: Set up your local environment
+<Note>
+  This quick start covers **Plausible Cloud**, our managed service. For self-hosting instructions, see the [Installation guide](/installation).
+</Note>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+## Prerequisites
+
+All you need is:
+
+- A website where you can add code to the `<head>` section
+- 2 minutes of your time
+
+No credit card required for the 30-day free trial.
+
+## Step 1: Create Your Account
+
+<Steps>
+  <Step title="Sign Up">
+    Visit [plausible.io/register](https://plausible.io/register) and create your account.
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    Enter your email and create a password. You'll receive a confirmation email to verify your account.
+  </Step>
+  
+  <Step title="Add Your Website">
+    After signing in, you'll be prompted to add your first website.
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    Enter your domain exactly as it appears in the browser (e.g., `mywebsite.com` or `blog.mywebsite.com`).
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    <Warning>
+      Use the domain without `http://` or `https://`. Just the domain name like `example.com`.
+    </Warning>
+  </Step>
+  
+  <Step title="Configure Timezone and Region">
+    Select your timezone and reporting region. This determines how your daily/weekly/monthly reports are calculated.
+  </Step>
+</Steps>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+## Step 2: Install the Tracking Script
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+Plausible offers multiple installation methods. Choose the one that works best for your setup.
 
-### Step 3: Go live
+### Method 1: Manual Script Installation (Recommended)
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+This is the simplest method for most websites.
 
-## Next steps
+<Steps>
+  <Step title="Copy Your Snippet">
+    After adding your site, you'll see your unique tracking snippet that looks like this:
+    
+    ```html
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script async src="https://plausible.io/js/YOUR-SCRIPT-ID.js"></script>
+    <script>
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||};
+      plausible.init()
+    </script>
+    ```
+    
+    <Note>
+      Your actual snippet will include a unique Script ID specific to your site. The script is lightweight (< 1KB) and won't slow down your website.
+    </Note>
+  </Step>
+  
+  <Step title="Add to Your Website">
+    Paste the snippet into the `<head>` section of your website, before the closing `</head>` tag.
+    
+    For static sites, add it to your HTML template:
+    
+    ```html
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>My Website</title>
+        
+        <!-- Privacy-friendly analytics by Plausible -->
+        <script async src="https://plausible.io/js/YOUR-SCRIPT-ID.js"></script>
+        <script>
+          window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||};
+          plausible.init()
+        </script>
+      </head>
+      <body>
+        <!-- Your content -->
+      </body>
+    </html>
+    ```
+  </Step>
+  
+  <Step title="Deploy Your Changes">
+    Save the file and deploy your updated website.
+  </Step>
+</Steps>
 
-Now that you have your docs running, explore these key features:
+### Method 2: WordPress Plugin
+
+If you're using WordPress, we have an official plugin.
+
+<Steps>
+  <Step title="Install the Plugin">
+    Go to your WordPress admin panel → Plugins → Add New
+    
+    Search for "Plausible Analytics" and click Install, then Activate.
+  </Step>
+  
+  <Step title="Configure the Plugin">
+    Go to Settings → Plausible Analytics
+    
+    Enter your domain and save the settings. The plugin will automatically add the tracking script to your site.
+  </Step>
+</Steps>
+
+### Method 3: NPM Package
+
+For modern JavaScript applications (React, Vue, Next.js, etc.):
+
+<Steps>
+  <Step title="Install the Package">
+    ```bash
+    npm install @plausible-analytics/tracker
+    ```
+  </Step>
+  
+  <Step title="Initialize in Your App">
+    ```javascript
+    import { init } from '@plausible-analytics/tracker'
+    
+    init({
+      domain: 'mywebsite.com'
+    })
+    ```
+    
+    <Note>
+      The `init` function must be called on the client side only. For SSR frameworks like Next.js, ensure initialization happens in a client component or `useEffect` hook.
+    </Note>
+  </Step>
+  
+  <Step title="Enable Auto-Capture (Optional)">
+    By default, the NPM package automatically tracks pageviews. For SPA routing:
+    
+    ```javascript
+    init({
+      domain: 'mywebsite.com',
+      autoCapturePageviews: true  // enabled by default
+    })
+    ```
+  </Step>
+</Steps>
+
+## Step 3: Verify Installation
+
+<Steps>
+  <Step title="Click Verify Installation">
+    After adding the script, return to your Plausible dashboard and click the "Verify Installation" button.
+    
+    Plausible will automatically detect if the script is installed correctly on your site.
+  </Step>
+  
+  <Step title="Visit Your Website">
+    Open your website in a browser (in a regular window, not incognito mode).
+    
+    Navigate to a few pages to generate some test traffic.
+  </Step>
+  
+  <Step title="Check Your Dashboard">
+    Return to your Plausible dashboard. You should see your first pageview appear within a few seconds!
+    
+    <Note>
+      The dashboard updates in realtime. If you don't see data immediately, wait 10-15 seconds and refresh.
+    </Note>
+  </Step>
+</Steps>
+
+## Step 4: Explore Your Dashboard
+
+Congratulations! You're now tracking privacy-friendly analytics. Here's what you'll see:
 
 <CardGroup cols={2}>
+  <Card title="Current Visitors" icon="users">
+    See how many people are on your site right now in realtime
+  </Card>
+  
+  <Card title="Pageviews" icon="chart-line">
+    Total pageviews over your selected time period
+  </Card>
+  
+  <Card title="Top Pages" icon="file">
+    Which pages on your site are getting the most traffic
+  </Card>
+  
+  <Card title="Traffic Sources" icon="arrow-right-to-bracket">
+    Where your visitors are coming from (Google, social media, direct, etc.)
+  </Card>
+</CardGroup>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+## Optional: Enhanced Tracking
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+Want to track more than pageviews? Enable these optional features:
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+### Track Outbound Links
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+Automatically track when users click external links:
 
+```javascript
+// NPM package
+init({
+  domain: 'mywebsite.com',
+  outboundLinks: true
+})
+```
+
+For the script installation, enable this option in your site settings.
+
+### Track File Downloads
+
+Monitor when users download files:
+
+```javascript
+// NPM package
+init({
+  domain: 'mywebsite.com',
+  fileDownloads: true
+})
+```
+
+### Track Custom Events
+
+Track button clicks, form submissions, and other user actions:
+
+```javascript
+import { track } from '@plausible-analytics/tracker'
+
+// Track a signup
+track('Signup', { props: { plan: 'Pro' } })
+
+// Track a purchase with revenue
+track('Purchase', { 
+  revenue: { amount: 29.99, currency: 'USD' },
+  props: { product: 'Premium Plan' }
+})
+```
+
+<Warning>
+  Custom events and enhanced tracking features count towards your billable pageviews.
+</Warning>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="I don't see any data in my dashboard">
+    - Make sure you visited your site in a regular browser window (not incognito/private mode)
+    - Check that the script snippet is in the `<head>` section, not the `<body>`
+    - Verify your domain in the snippet matches exactly what you entered in settings
+    - Disable any ad blockers and try again (note: Plausible is blocked by many ad blockers)
+    - Check your browser console for any JavaScript errors
+  </Accordion>
+  
+  <Accordion title="The script is installed but not detected">
+    - Clear your browser cache and hard reload the page (Ctrl+Shift+R or Cmd+Shift+R)
+    - Make sure the script loads before the closing `</head>` tag
+    - Check that your Script ID is correct in the snippet
+    - Some content security policies (CSP) may block the script - add plausible.io to your allowed domains
+  </Accordion>
+  
+  <Accordion title="Pageviews aren't tracking on my SPA">
+    If you're using a single-page application with client-side routing:
+    
+    - For NPM: ensure `autoCapturePageviews: true` is set (default)
+    - For hash-based routing (/#/page), enable the hash routing option:
+      ```javascript
+      init({
+        domain: 'mywebsite.com',
+        hashBasedRouting: true
+      })
+      ```
+  </Accordion>
+  
+  <Accordion title="I want to exclude my own visits">
+    Set `localStorage.plausible_ignore` to `"true"` in your browser console:
+    
+    ```javascript
+    localStorage.plausible_ignore = "true"
+    ```
+    
+    Or add this to your site for a permanent exclusion link for you and your team.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Set Up Goals" icon="bullseye">
+    Track conversions like signups, purchases, or downloads
+  </Card>
+  
+  <Card title="Invite Team Members" icon="user-plus">
+    Collaborate with your team and assign roles
+  </Card>
+  
+  <Card title="Email Reports" icon="envelope">
+    Get weekly or monthly analytics reports sent to your inbox
+  </Card>
+  
+  <Card title="Integrate Search Console" icon="magnifying-glass">
+    See which keywords bring traffic from Google
+  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Need help? Join our [community forum](https://github.com/plausible/analytics/discussions) or check the full [documentation](https://plausible.io/docs) for detailed guides.
 </Note>

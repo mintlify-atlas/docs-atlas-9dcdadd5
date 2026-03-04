@@ -1,0 +1,385 @@
+---
+title: Traffic Shields
+description: Filter unwanted traffic with IP blocks, country rules, page filters, and hostname allowlists
+---
+
+Traffic shields help you filter out unwanted traffic from your analytics, ensuring your data remains accurate and meaningful. Plausible supports four types of traffic filtering rules.
+
+## Shield Types
+
+All shield rules support two actions:
+- **Deny**: Block traffic matching the rule (default)
+- **Allow**: Explicitly permit traffic matching the rule
+
+<Info>
+Shield rules are cached for performance and updated automatically when you make changes.
+</Info>
+
+## IP Address Blocking
+
+Block or allow traffic from specific IP addresses to filter out internal traffic, bots, or unwanted visitors.
+
+### Creating IP Rules
+
+<Steps>
+  <Step title="Navigate to Shields">
+    Go to Site Settings > Shields > IP Addresses
+  </Step>
+  
+  <Step title="Add IP Address">
+    Enter the IP address you want to block or allow:
+    - IPv4: `192.168.1.1`
+    - IPv6: `2001:0db8:85a3:0000:0000:8a2e:0370:7334`
+  </Step>
+  
+  <Step title="Add Description (Optional)">
+    Add a description to remember why you created this rule, such as "Office IP" or "Known bot".
+  </Step>
+  
+  <Step title="Select Action">
+    Choose whether to **deny** (block) or **allow** this IP address.
+  </Step>
+</Steps>
+
+### IP Rule Details
+
+```elixir
+schema "shield_rules_ip" do
+  belongs_to :site, Plausible.Site
+  field :inet, EctoNetwork.INET
+  field :action, Ecto.Enum, values: [:deny, :allow], default: :deny
+  field :description, :string
+  field :added_by, :string
+end
+```
+
+<Warning>
+Netmasks (CIDR notation) are not supported. You must specify individual IP addresses.
+</Warning>
+
+### Common Use Cases
+
+**Block office traffic:**
+```
+IP: 203.0.113.0
+Action: Deny
+Description: Office IP - exclude from analytics
+```
+
+**Block known bot:**
+```
+IP: 198.51.100.42
+Action: Deny
+Description: Scraper bot
+```
+
+## Country Filtering
+
+Block or allow traffic from entire countries using ISO country codes.
+
+### Creating Country Rules
+
+<Steps>
+  <Step title="Open Country Shields">
+    Navigate to Site Settings > Shields > Countries
+  </Step>
+  
+  <Step title="Select Country">
+    Choose a country from the dropdown or enter its 2-letter ISO code (e.g., US, GB, FR).
+  </Step>
+  
+  <Step title="Configure Action">
+    Select whether to block or allow traffic from this country.
+  </Step>
+</Steps>
+
+### Country Rule Schema
+
+```elixir
+schema "shield_rules_country" do
+  belongs_to :site, Plausible.Site
+  field :country_code, :string  # 2-letter ISO code
+  field :action, Ecto.Enum, values: [:deny, :allow], default: :deny
+  field :added_by, :string
+end
+```
+
+### Country Codes
+
+- Use standard 2-letter ISO country codes (ISO 3166-1 alpha-2)
+- Special code: `ZZ` represents unknown/undetected countries
+
+<Info>
+The country code must be exactly 2 characters and match a valid ISO country code.
+</Info>
+
+### Example Rules
+
+**Block specific country:**
+```
+Country Code: CN
+Action: Deny
+```
+
+**Allow only specific countries:**
+```
+Country Code: US
+Action: Allow
+
+Country Code: GB
+Action: Allow
+```
+
+<Note>
+Country detection is based on the visitor's IP address. VPNs and proxies may affect accuracy.
+</Note>
+
+## Page Path Filtering
+
+Filter traffic based on page paths using exact matches or wildcard patterns.
+
+### Creating Page Rules
+
+<Steps>
+  <Step title="Access Page Shields">
+    Go to Site Settings > Shields > Pages
+  </Step>
+  
+  <Step title="Enter Page Path">
+    Specify the page path to filter. Must start with `/`.
+    
+    Examples:
+    - `/admin`
+    - `/api/*`
+    - `/blog/**`
+  </Step>
+  
+  <Step title="Choose Action">
+    Select deny to exclude or allow to include only matching pages.
+  </Step>
+</Steps>
+
+### Wildcard Patterns
+
+Page rules support wildcard matching:
+
+- `*` - Matches any characters in a single path segment
+- `**` - Matches any characters across multiple path segments
+
+**Examples:**
+
+| Pattern | Matches | Doesn't Match |
+|---------|---------|---------------|
+| `/admin` | `/admin` | `/admin/users` |
+| `/admin/*` | `/admin/users`, `/admin/settings` | `/admin/users/edit` |
+| `/admin/**` | `/admin/users`, `/admin/users/edit/123` | `/api/admin` |
+| `/blog/*/comments` | `/blog/post-1/comments` | `/blog/nested/post/comments` |
+
+### Page Rule Schema
+
+```elixir
+schema "shield_rules_page" do
+  belongs_to :site, Plausible.Site
+  field :page_path, :string  # Max 250 characters
+  field :page_path_pattern, :string  # Compiled regex
+  field :action, Ecto.Enum, values: [:deny, :allow], default: :deny
+  field :added_by, :string
+end
+```
+
+<Info>
+Page patterns are automatically compiled to regular expressions for efficient matching.
+</Info>
+
+### Validation Rules
+
+- Page paths must start with `/`
+- Maximum length: 250 characters
+- Pattern must compile to a valid regular expression
+
+<Warning>
+If your pattern creates an invalid regex, you'll receive an error: "could not compile regular expression"
+</Warning>
+
+### Common Use Cases
+
+**Exclude admin pages:**
+```
+Page Path: /admin/**
+Action: Deny
+```
+
+**Exclude API endpoints:**
+```
+Page Path: /api/**
+Action: Deny
+```
+
+**Track only blog posts:**
+```
+Page Path: /blog/**
+Action: Allow
+```
+
+## Hostname Allowlist
+
+Control which hostnames can send events to your site. This is an allowlist-only feature (default action is `allow`).
+
+### Creating Hostname Rules
+
+<Steps>
+  <Step title="Navigate to Hostname Shields">
+    Go to Site Settings > Shields > Hostnames
+  </Step>
+  
+  <Step title="Add Allowed Hostname">
+    Enter the hostname that should be allowed to send events.
+    
+    Examples:
+    - `example.com`
+    - `*.example.com`
+    - `app.example.com`
+  </Step>
+  
+  <Step title="Save Rule">
+    The hostname will be added to your allowlist.
+  </Step>
+</Steps>
+
+### Wildcard Support
+
+Hostname rules support wildcard patterns:
+
+- `example.com` - Matches exactly `example.com`
+- `*.example.com` - Matches all subdomains
+- `**` - Matches any hostname (not recommended)
+
+**Examples:**
+
+| Pattern | Matches | Doesn't Match |
+|---------|---------|---------------|
+| `example.com` | `example.com` | `www.example.com` |
+| `*.example.com` | `app.example.com`, `api.example.com` | `example.com` |
+| `www.example.com` | `www.example.com` | `example.com` |
+
+### Hostname Rule Schema
+
+```elixir
+schema "shield_rules_hostname" do
+  belongs_to :site, Plausible.Site
+  field :hostname, :string  # Max 250 characters
+  field :hostname_pattern, :string  # Compiled regex
+  field :action, Ecto.Enum, values: [:deny, :allow], default: :allow
+  field :added_by, :string
+end
+```
+
+<Note>
+Hostname shields prevent event spoofing by ensuring events only come from your legitimate domains.
+</Note>
+
+### Use Cases
+
+**Allow main domain and www:**
+```
+Hostname: example.com
+Hostname: www.example.com
+```
+
+**Allow all subdomains:**
+```
+Hostname: *.example.com
+```
+
+**Multi-domain setup:**
+```
+Hostname: example.com
+Hostname: example.org
+Hostname: example.net
+```
+
+<Warning>
+If you have hostname shields configured, only events from explicitly allowed hostnames will be recorded.
+</Warning>
+
+## Shield Performance
+
+All shield rules are cached for optimal performance:
+
+- IP rules use `Plausible.Shield.IPRuleCache`
+- Country rules use `Plausible.Shield.CountryRuleCache`
+- Page rules use `Plausible.Shield.PageRuleCache`
+- Hostname rules use `Plausible.Shield.HostnameRuleCache`
+
+<Info>
+Caches are automatically updated when you add, modify, or remove shield rules.
+</Info>
+
+## Managing Shield Rules
+
+### Viewing Active Rules
+
+See all active shield rules for your site:
+1. Navigate to Site Settings > Shields
+2. View rules organized by type
+3. See who added each rule and when
+
+### Editing Rules
+
+To modify a rule:
+1. Remove the existing rule
+2. Create a new rule with updated settings
+
+<Note>
+Shield rules cannot be directly edited. Delete and recreate the rule with your desired changes.
+</Note>
+
+### Removing Rules
+
+Delete a shield rule:
+1. Find the rule in your shields list
+2. Click the delete/remove button
+3. Confirm removal
+
+The rule is removed immediately and the cache is updated.
+
+## Best Practices
+
+<Steps>
+  <Step title="Start with IP Blocking">
+    Block your office/development IPs first to exclude internal traffic.
+  </Step>
+  
+  <Step title="Test Before Blocking Countries">
+    Review your country distribution before blocking entire countries.
+  </Step>
+  
+  <Step title="Use Specific Patterns">
+    Make page and hostname patterns as specific as possible to avoid over-filtering.
+  </Step>
+  
+  <Step title="Document Your Rules">
+    Use descriptions to explain why each rule exists for future reference.
+  </Step>
+  
+  <Step title="Monitor Impact">
+    Check your analytics after adding rules to ensure you're not blocking legitimate traffic.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+**Rule not working?**
+- Verify the pattern syntax is correct
+- Check that the rule action (deny/allow) is what you intended
+- Wait a few moments for cache updates to propagate
+
+**Accidentally blocking too much?**
+- Review your wildcard patterns
+- Remove overly broad rules
+- Consider using more specific patterns
+
+**Pattern won't save?**
+- Ensure page paths start with `/`
+- Check pattern length (max 250 characters)
+- Verify the pattern compiles to valid regex

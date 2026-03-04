@@ -1,0 +1,334 @@
+---
+title: Data Segmentation
+description: Create and save custom audience segments to analyze specific visitor groups and track their behavior over time.
+---
+
+Segments allow you to save filter combinations and analyze specific subsets of your audience. Instead of repeatedly applying the same filters, you can create reusable segments for instant access to the insights that matter most.
+
+<Note>
+Site-level segments (shared with all team members) require a Business plan. Personal segments are available to all users.
+</Note>
+
+## What are Segments?
+
+Segments are saved filter combinations that let you:
+
+- Analyze specific audience groups
+- Track behavior patterns over time
+- Share insights with team members
+- Create consistent reporting views
+- Apply complex filter logic quickly
+
+## Segment Types
+
+Plausible offers two types of segments:
+
+<CardGroup cols={2}>
+  <Card title="Personal Segments" icon="user">
+    Visible only to you. Perfect for individual analysis and personal workflows. Available on all plans.
+  </Card>
+  <Card title="Site Segments" icon="users">
+    Shared with all team members. Ideal for standardized reporting and team collaboration. Requires Business plan.
+  </Card>
+</CardGroup>
+
+## Creating Segments
+
+<Steps>
+  <Step title="Apply Filters">
+    Start by filtering your dashboard:
+    - Filter by traffic source
+    - Filter by location
+    - Filter by device or browser
+    - Filter by page visits
+    - Filter by goal completions
+    - Combine multiple filters
+  </Step>
+  
+  <Step title="Save as Segment">
+    Once you have the filters you want, click "Save Segment" or use the segment creation interface in your dashboard.
+  </Step>
+  
+  <Step title="Configure Segment">
+    Set segment properties:
+    - **Name**: Descriptive name (e.g., "Mobile Users from US")
+    - **Type**: Personal or Site (if available)
+    - **Filters**: Review and confirm filter configuration
+  </Step>
+  
+  <Step title="Access Your Segment">
+    Saved segments appear in:
+    - Segment dropdown on your dashboard
+    - Segment management settings
+    - Shared link configurations
+  </Step>
+</Steps>
+
+## Supported Filters
+
+Segments can include filters for:
+
+### Visit Properties
+
+- **Source** - Traffic source (e.g., "Google", "Facebook")
+- **Channel** - Traffic channel (e.g., "Organic Search", "Direct")
+- **Referrer** - Referring URL
+- **UTM Parameters** - Campaign, source, medium, content, term
+- **Entry/Exit Pages** - Landing and exit pages
+- **Device** - Desktop, Mobile, Tablet
+- **Browser** - Chrome, Safari, Firefox, etc.
+- **Operating System** - Windows, macOS, Linux, iOS, Android
+- **Screen Size** - Desktop, Laptop, Tablet, Mobile
+- **Country/Region/City** - Geographic location
+
+### Event Properties
+
+- **Page** - Specific page visits
+- **Goal** - Goal completions
+- **Hostname** - For multi-domain setups
+- **Custom Properties** - Event-specific properties
+
+### Filter Operators
+
+Use various operators for precise filtering:
+
+- **is** - Exact match
+- **is not** - Exclusion
+- **contains** - Partial match
+- **does not contain** - Partial exclusion
+
+<Accordion title="Advanced Filter Logic">
+While the dashboard interface supports basic filter combinations (AND logic), segments can store more complex filter structures including:
+- Multiple conditions on the same dimension
+- Exclusion filters
+- Behavioral filters (has done / has not done specific actions)
+</Accordion>
+
+## Managing Segments
+
+### Viewing Segments
+
+Access your segments:
+
+1. **Dashboard Dropdown** - Quick access to apply segments
+2. **Settings Page** - Full segment management interface
+3. **API** - Programmatic access to segment data
+
+### Editing Segments
+
+Modify existing segments:
+
+- Update segment name
+- Change filter configuration
+- Convert personal to site segment (with permissions)
+- Update segment metadata
+
+<Info>
+When you update a segment's filters, the change applies retroactively. Historical data is re-analyzed with the new filter criteria.
+</Info>
+
+### Deleting Segments
+
+When deleting a segment:
+
+- Segment configuration is removed
+- Underlying data remains intact
+- Shared links using the segment are affected
+- Personal segments can be deleted by the owner
+- Site segments require editor/admin permissions
+
+### Segment Limits
+
+Each site can have up to **500 segments** total, including:
+
+- Personal segments
+- Site segments
+- All team member segments
+
+## Using Segments
+
+### Dashboard Analysis
+
+Apply a segment to your dashboard:
+
+1. Select segment from dropdown
+2. Dashboard updates to show only segment data
+3. All metrics and breakdowns filtered accordingly
+4. Time-series graph reflects segment behavior
+
+### Segment Comparison
+
+Analyze multiple segments:
+
+- Apply one segment
+- Use comparison mode to compare with another period or segment
+- Identify behavioral differences
+- Track segment growth over time
+
+### Integration with Other Features
+
+**Goals and Conversions**
+- Track goal completion rates within segments
+- Identify which segments convert best
+- Optimize for high-value segments
+
+**Funnels**
+- Apply segments to funnel analysis
+- Compare funnel performance across segments
+- Identify segment-specific bottlenecks
+
+**Shared Links**
+- Create shared links with segment filters pre-applied
+- Share specific insights with stakeholders
+- Maintain consistent reporting views
+
+## Common Use Cases
+
+### Marketing Analysis
+
+```json
+Segment: "Paid Campaign Visitors"
+Filters:
+- UTM Source is "google-ads"
+- UTM Medium is "cpc"
+```
+
+### Geographic Targeting
+
+```json
+Segment: "European Mobile Users"
+Filters:
+- Country is in ["UK", "Germany", "France"]
+- Device is "Mobile"
+```
+
+### Conversion Focus
+
+```json
+Segment: "Converted Visitors"
+Filters:
+- Goal is "Purchase"
+```
+
+### Content Performance
+
+```json
+Segment: "Blog Readers"
+Filters:
+- Page contains "/blog/"
+- Time on Page > 30 seconds
+```
+
+## Permissions and Access
+
+### Personal Segments
+
+Available to users with roles:
+- Viewer
+- Editor
+- Admin
+- Owner
+
+Each user can:
+- Create unlimited personal segments (within site limit)
+- View only their own personal segments
+- Edit and delete their own segments
+
+### Site Segments
+
+Available to users with roles:
+- Editor
+- Admin  
+- Owner
+
+Capabilities:
+- Create segments visible to all team members
+- Edit any site segment
+- Delete site segments
+- View all site segments
+
+<Warning>
+When a user is removed from a team or site:
+- Their personal segments are automatically deleted
+- Site segments they created transfer to another team member or become orphaned
+</Warning>
+
+## Segment Data Validation
+
+When creating or updating segments, Plausible validates:
+
+1. **Filter Syntax** - Ensures filters use correct format
+2. **Dimension Availability** - Verifies dimensions exist
+3. **Depth Restrictions** - Limits filter nesting for dashboard compatibility
+4. **Data Size** - Keeps segment definitions under 5KB
+
+<Accordion title="Filter Depth Restrictions">
+For dashboard compatibility, segments must use relatively flat filter structures. Deep nesting (multiple levels of AND/OR logic) is not supported in the dashboard interface, though the API may support more complex filters.
+</Accordion>
+
+## API Access
+
+Segments are accessible via the Stats API:
+
+```bash
+GET /api/v2/sites/{site_id}/segments
+```
+
+Use segments programmatically:
+- List all available segments
+- Create segments via API
+- Update segment configurations
+- Apply segments to API queries
+- Delete segments
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Cannot create site segment">
+    - Verify you have a Business plan
+    - Check that you have Editor, Admin, or Owner role
+    - Ensure you haven't reached the 500 segment limit
+  </Accordion>
+  
+  <Accordion title="Segment shows no data">
+    - Verify filters are not too restrictive
+    - Check date range includes relevant traffic
+    - Ensure filter values match your actual data (case-sensitive)
+    - Review filter logic for conflicts
+  </Accordion>
+  
+  <Accordion title="Segment disappeared">
+    - Personal segments are deleted when users leave the team
+    - Check if you're viewing the correct site
+    - Verify segment wasn't accidentally deleted
+    - Confirm you have permissions to view site segments
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Descriptive Names" icon="tag">
+    Use clear, specific names that describe the segment's purpose and filters.
+  </Card>
+  <Card title="Document Purpose" icon="file-lines">
+    Keep a reference of what each segment tracks and why it was created.
+  </Card>
+  <Card title="Regular Review" icon="rotate">
+    Periodically review and clean up unused segments to stay organized.
+  </Card>
+  <Card title="Consistent Naming" icon="list">
+    Establish naming conventions for team segments to maintain clarity.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Dashboard" icon="chart-line" href="/features/dashboard">
+    Apply segments to your analytics dashboard
+  </Card>
+  <Card title="Funnels" icon="filter" href="/features/funnels">
+    Analyze funnels with segment filters
+  </Card>
+</CardGroup>

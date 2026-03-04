@@ -1,0 +1,513 @@
+---
+title: Upgrade Guide
+description: How to upgrade Plausible Analytics Community Edition to newer versions
+---
+
+## Upgrade Overview
+
+Plausible Community Edition is released twice per year with long-term support. Staying up to date ensures you have the latest bug fixes, performance improvements, and features.
+
+<Warning>
+  Always backup your databases before upgrading. See the [Maintenance](/self-hosting/maintenance) guide for backup procedures.
+</Warning>
+
+## Release Schedule
+
+Community Edition follows a different release schedule than Plausible Cloud:
+
+- **Frequency**: Long-term releases published twice per year
+- **Versioning**: Semantic versioning (MAJOR.MINOR.PATCH)
+- **Support**: Community-supported through GitHub Discussions
+
+<Info>
+  Plausible Cloud receives continuous updates multiple times per week. CE releases bundle these changes into stable releases.
+</Info>
+
+## Before You Upgrade
+
+<Steps>
+  <Step title="Review the Changelog">
+    Check the [CHANGELOG.md](https://github.com/plausible/analytics/blob/master/CHANGELOG.md) for:
+    - Breaking changes
+    - New features
+    - Configuration changes
+    - Migration requirements
+  </Step>
+
+  <Step title="Backup Your Data">
+    Create backups of both databases:
+    
+    ```bash
+    # PostgreSQL backup
+    docker compose exec plausible_db pg_dump -U postgres plausible_db > backup_postgres_$(date +%Y%m%d).sql
+    
+    # ClickHouse backup
+    docker compose exec plausible_events_db clickhouse-client --query "BACKUP DATABASE plausible_events_db TO Disk('backups', 'backup_$(date +%Y%m%d).zip')"
+    ```
+  </Step>
+
+  <Step title="Check System Requirements">
+    Verify your system meets requirements for the new version:
+    - Docker version compatibility
+    - Database version requirements
+    - Available disk space
+    - Memory requirements
+  </Step>
+
+  <Step title="Plan Downtime">
+    Schedule the upgrade during low-traffic periods. Typical downtime: 5-15 minutes.
+  </Step>
+</Steps>
+
+## Standard Upgrade Procedure
+
+### Using Docker Compose
+
+<Steps>
+  <Step title="Pull Latest Changes">
+    Update the community-edition repository:
+    
+    ```bash
+    cd community-edition
+    git pull origin master
+    ```
+  </Step>
+
+  <Step title="Pull New Images">
+    Download the latest Docker images:
+    
+    ```bash
+    docker compose pull
+    ```
+    
+    This downloads:
+    - Latest Plausible application image
+    - Updated PostgreSQL (if version changed)
+    - Updated ClickHouse (if version changed)
+  </Step>
+
+  <Step title="Stop Services">
+    Gracefully stop all running containers:
+    
+    ```bash
+    docker compose down
+    ```
+  </Step>
+
+  <Step title="Start Services">
+    Launch with new images:
+    
+    ```bash
+    docker compose up -d
+    ```
+  </Step>
+
+  <Step title="Run Migrations">
+    Apply database migrations:
+    
+    ```bash
+    docker compose exec plausible sh -c "/app/migrate.sh"
+    ```
+    
+    <Note>
+      Migrations use an interweaved approach, running PostgreSQL and ClickHouse migrations in order.
+    </Note>
+  </Step>
+
+  <Step title="Verify Upgrade">
+    Check that services are running:
+    
+    ```bash
+    docker compose ps
+    docker compose logs plausible
+    ```
+    
+    Verify the version:
+    ```bash
+    docker compose exec plausible sh -c "/app/bin/plausible version"
+    ```
+  </Step>
+</Steps>
+
+## Migration Details
+
+### Database Migrations
+
+Plausible uses two databases that must be migrated:
+
+<Tabs>
+  <Tab title="PostgreSQL">
+    Stores application data:
+    - User accounts
+    - Site configurations
+    - API keys
+    - Team memberships
+    
+    Migrations are applied automatically by the `migrate.sh` script.
+  </Tab>
+  
+  <Tab title="ClickHouse">
+    Stores analytics data:
+    - Pageviews
+    - Custom events
+    - Session data
+    - Aggregated statistics
+    
+    Migrations may take longer for large datasets.
+  </Tab>
+</Tabs>
+
+### Checking Migration Status
+
+```bash
+# Check pending migrations
+docker compose exec plausible sh -c "/app/pending-migrations.sh"
+```
+
+### Manual Migration Control
+
+For advanced users:
+
+```bash
+# Run only PostgreSQL migrations
+docker compose exec plausible sh -c "/app/bin/plausible eval 'Plausible.Release.migrate()'"
+
+# Run only ClickHouse migrations
+docker compose exec plausible sh -c "/app/bin/plausible eval 'Plausible.Release.clickhouse_migrate()'"
+```
+
+## Version-Specific Upgrade Notes
+
+### Upgrading to v3.0+
+
+<AccordionGroup>
+  <Accordion title="Time on Page Metric Changes">
+    Version 3.0 reworked the time-on-page metric calculation:
+    
+    - Now uses `engagement` events from tracker
+    - Legacy calculation used for historical data
+    - Warnings shown when legacy methods are used
+    
+    No action required - changes are automatic.
+  </Accordion>
+
+  <Accordion title="Filter Format Changes">
+    Dashboard filters changed from encoded to readable format:
+    
+    - Old: `?filters=((is,page,(/docs,/blog)),...)`
+    - New: `?f=is,page,/docs,/blog&f=...`
+    
+    Old links continue to work automatically.
+  </Accordion>
+
+  <Accordion title="Session Tracking Updates">
+    ClickHouse now uses `VersionedCollapsingMergeTree` for visit data:
+    
+    - Prevents race conditions
+    - Improves data accuracy
+    - Automatic migration during upgrade
+    
+    Large datasets may take longer to migrate.
+  </Accordion>
+</AccordionGroup>
+
+### Upgrading to v2.1+
+
+<AccordionGroup>
+  <Accordion title="Registration Default Change">
+    Default registration mode changed to `invite_only`:
+    
+    ```bash
+    # Explicitly set if you want open registration
+    DISABLE_REGISTRATION=false
+    ```
+  </Accordion>
+
+  <Accordion title="IPv6 Environment Variables">
+    `ECTO_IPV6` and `ECTO_CH_IPV6` are deprecated:
+    
+    - IPv6 is now automatic with IPv4 fallback
+    - Remove these variables from configuration
+    - No action needed for most deployments
+  </Accordion>
+
+  <Accordion title="Cookie Changes">
+    Auth cookies changed to token-based with server-side expiration:
+    
+    - All users will be logged out after upgrade
+    - No data loss
+    - Users just need to log in again
+  </Accordion>
+</AccordionGroup>
+
+### Upgrading to v2.0+
+
+<AccordionGroup>
+  <Accordion title="Configuration Consolidation">
+    Environment variables consolidated:
+    
+    **Old format:**
+    ```bash
+    CLICKHOUSE_DATABASE_HOST=clickhouse
+    CLICKHOUSE_DATABASE_NAME=plausible
+    CLICKHOUSE_DATABASE_USER=default
+    CLICKHOUSE_DATABASE_PASSWORD=password
+    ```
+    
+    **New format:**
+    ```bash
+    CLICKHOUSE_DATABASE_URL=http://default:password@clickhouse:8123/plausible
+    ```
+    
+    Update your configuration file before upgrading.
+  </Accordion>
+
+  <Accordion title="Mailer Adapter Change">
+    Default mailer changed from Postmark to `Bamboo.Mua`:
+    
+    ```bash
+    # If using Postmark, explicitly set:
+    MAILER_ADAPTER=Bamboo.PostmarkAdapter
+    POSTMARK_API_KEY=your-key
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Rollback Procedure
+
+If issues occur during upgrade:
+
+<Steps>
+  <Step title="Stop Services">
+    ```bash
+    docker compose down
+    ```
+  </Step>
+
+  <Step title="Restore Database Backups">
+    ```bash
+    # Restore PostgreSQL
+    docker compose exec -T plausible_db psql -U postgres plausible_db < backup_postgres_YYYYMMDD.sql
+    
+    # Restore ClickHouse
+    docker compose exec plausible_events_db clickhouse-client --query "RESTORE DATABASE plausible_events_db FROM Disk('backups', 'backup_YYYYMMDD.zip')"
+    ```
+  </Step>
+
+  <Step title="Revert to Previous Version">
+    ```bash
+    git checkout <previous-version-tag>
+    docker compose pull
+    docker compose up -d
+    ```
+  </Step>
+
+  <Step title="Verify">
+    Check that the previous version is running correctly:
+    ```bash
+    docker compose ps
+    docker compose logs plausible
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Database migrations may not be reversible. Always maintain backups before upgrading.
+</Warning>
+
+## Upgrading ClickHouse
+
+### ClickHouse Version Compatibility
+
+Plausible supports ClickHouse 21.0+. To upgrade ClickHouse:
+
+<Steps>
+  <Step title="Check Current Version">
+    ```bash
+    docker compose exec plausible_events_db clickhouse-client --query "SELECT version()"
+    ```
+  </Step>
+
+  <Step title="Review ClickHouse Release Notes">
+    Check [ClickHouse releases](https://github.com/ClickHouse/ClickHouse/releases) for breaking changes
+  </Step>
+
+  <Step title="Backup Data">
+    Create a full ClickHouse backup before proceeding
+  </Step>
+
+  <Step title="Update docker-compose.yml">
+    ```yaml
+    plausible_events_db:
+      image: clickhouse/clickhouse-server:24.3-alpine
+      # ... rest of config
+    ```
+  </Step>
+
+  <Step title="Restart Services">
+    ```bash
+    docker compose down
+    docker compose up -d
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  ClickHouse upgrades are generally backward compatible, but always test in a staging environment first.
+</Note>
+
+## Upgrading PostgreSQL
+
+PostgreSQL upgrades require more care:
+
+<Warning>
+  PostgreSQL major version upgrades (e.g., 14 → 15) require a database dump and restore. This is NOT automatic.
+</Warning>
+
+<Steps>
+  <Step title="Backup Current Database">
+    ```bash
+    docker compose exec plausible_db pg_dumpall -U postgres > backup_full_$(date +%Y%m%d).sql
+    ```
+  </Step>
+
+  <Step title="Stop All Services">
+    ```bash
+    docker compose down
+    ```
+  </Step>
+
+  <Step title="Update Database Volume">
+    For major version upgrades, you may need to remove the old volume:
+    ```bash
+    docker volume rm community-edition_db-data
+    ```
+  </Step>
+
+  <Step title="Update docker-compose.yml">
+    ```yaml
+    plausible_db:
+      image: postgres:15-alpine
+      # ... rest of config
+    ```
+  </Step>
+
+  <Step title="Start Database">
+    ```bash
+    docker compose up -d plausible_db
+    ```
+  </Step>
+
+  <Step title="Restore Backup">
+    ```bash
+    docker compose exec -T plausible_db psql -U postgres < backup_full_YYYYMMDD.sql
+    ```
+  </Step>
+
+  <Step title="Start Remaining Services">
+    ```bash
+    docker compose up -d
+    ```
+  </Step>
+</Steps>
+
+## Troubleshooting Upgrades
+
+<AccordionGroup>
+  <Accordion title="Migration Fails">
+    **Error:** Migration script exits with error
+    
+    **Solutions:**
+    1. Check logs: `docker compose logs plausible`
+    2. Verify database connectivity
+    3. Ensure sufficient disk space
+    4. Check for schema conflicts
+    5. Consult GitHub Discussions for specific error
+    
+    If migration fails, rollback to backup and investigate.
+  </Accordion>
+
+  <Accordion title="Container Won't Start">
+    **Error:** Plausible container exits immediately
+    
+    **Solutions:**
+    1. Check configuration: `docker compose config`
+    2. Review environment variables
+    3. Check logs: `docker compose logs plausible`
+    4. Verify BASE_URL and SECRET_KEY_BASE
+    5. Ensure databases are accessible
+  </Accordion>
+
+  <Accordion title="Performance Degradation">
+    **Issue:** Plausible is slower after upgrade
+    
+    **Solutions:**
+    1. Run ClickHouse OPTIMIZE:
+       ```bash
+       docker compose exec plausible_events_db clickhouse-client --query "OPTIMIZE TABLE events_v2"
+       ```
+    2. Check database sizes and consider archival
+    3. Review ClickHouse buffer settings
+    4. Monitor resource usage (CPU, RAM, disk)
+  </Accordion>
+
+  <Accordion title="Missing Data After Upgrade">
+    **Issue:** Some statistics don't appear
+    
+    **Solutions:**
+    1. Check if migrations completed successfully
+    2. Review ClickHouse materialized views:
+       ```bash
+       docker compose exec plausible_events_db clickhouse-client --query "SHOW TABLES"
+       ```
+    3. Verify ClickHouse hasn't dropped partitions
+    4. Restore from backup if data loss occurred
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Test First" icon="flask">
+    Always test upgrades in a staging environment before production
+  </Card>
+  
+  <Card title="Backup Everything" icon="database">
+    Maintain regular backups and verify restoration works
+  </Card>
+  
+  <Card title="Read Changelogs" icon="book">
+    Review release notes for breaking changes and new features
+  </Card>
+  
+  <Card title="Monitor After Upgrade" icon="chart-line">
+    Watch logs and metrics after upgrading to catch issues early
+  </Card>
+</CardGroup>
+
+## Stay Updated
+
+<Steps>
+  <Step title="Watch Releases">
+    Star and watch the [Plausible Analytics repository](https://github.com/plausible/analytics) on GitHub
+  </Step>
+
+  <Step title="Join Discussions">
+    Participate in [GitHub Discussions](https://github.com/plausible/analytics/discussions)
+  </Step>
+
+  <Step title="Follow News">
+    Follow Plausible on [Twitter/X](https://twitter.com/plausiblehq) or [Mastodon](https://fosstodon.org/@plausible)
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Maintenance" icon="wrench" href="/self-hosting/maintenance">
+    Learn about operations, backups, and monitoring
+  </Card>
+  <Card title="Configuration" icon="gear" href="/self-hosting/configuration">
+    Review configuration options after upgrade
+  </Card>
+</CardGroup>

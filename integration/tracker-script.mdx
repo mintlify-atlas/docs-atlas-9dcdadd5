@@ -1,0 +1,231 @@
+---
+title: JavaScript Tracker Integration
+description: Learn how to integrate the Plausible Analytics tracker script into your website for privacy-focused analytics
+---
+
+## Overview
+
+The Plausible Analytics tracker is a lightweight JavaScript snippet that enables privacy-focused web analytics on your website. It automatically captures pageviews and can be configured to track custom events, file downloads, outbound links, and more.
+
+## Installation Methods
+
+There are two primary ways to integrate Plausible Analytics into your website:
+
+<Tabs>
+  <Tab title="Script Tag">
+    Add the Plausible script to your website's `<head>` section:
+
+    ```html
+    <script defer data-domain="yourdomain.com" src="https://plausible.io/js/script.js"></script>
+    ```
+
+    Replace `yourdomain.com` with your actual domain name as configured in your Plausible account.
+
+    <Note>
+      The `defer` attribute ensures the script loads asynchronously without blocking page rendering.
+    </Note>
+  </Tab>
+
+  <Tab title="NPM Package">
+    Install the official NPM package for modern JavaScript applications:
+
+    ```bash
+    npm install @plausible-analytics/tracker
+    ```
+
+    Then initialize the tracker in your application:
+
+    ```javascript
+    import { init } from '@plausible-analytics/tracker'
+
+    init({
+      domain: 'my-app.com'
+    })
+    ```
+
+    <Warning>
+      This library only works in browser environments. When using server-side rendering (SSR), ensure `init` and `track` functions are only called on the client side.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Configuration Options
+
+The tracker accepts various configuration options to customize its behavior:
+
+### Script Attributes
+
+When using the script tag method, configure behavior through data attributes:
+
+| Attribute | Description | Example |
+|-----------|-------------|----------|
+| `data-domain` | **Required** - Your site's domain | `data-domain="example.com"` |
+| `data-api` | Custom API endpoint for proxying | `data-api="https://analytics.example.com/api/event"` |
+| `data-exclude` | Exclude specific pages from tracking | `data-exclude="/admin/**"` |
+| `data-include` | Only track specific pages | `data-include="/blog/**"` |
+
+### NPM Configuration
+
+When using the NPM package, pass configuration options to the `init` function:
+
+```javascript
+import { init } from '@plausible-analytics/tracker'
+
+init({
+  domain: 'my-app.com',
+  endpoint: 'https://plausible.io/api/event',
+  autoCapturePageviews: true,
+  hashBasedRouting: false,
+  outboundLinks: false,
+  fileDownloads: false,
+  formSubmissions: false,
+  captureOnLocalhost: false,
+  logging: true,
+  bindToWindow: true
+})
+```
+
+### Configuration Reference
+
+<ResponseField name="domain" type="string" required>
+  Your site's domain, as declared in your Plausible account settings.
+</ResponseField>
+
+<ResponseField name="endpoint" type="string" default="https://plausible.io/api/event">
+  The URL of the Plausible API endpoint. See the [proxy guide](https://plausible.io/docs/proxy/introduction) for custom endpoints.
+</ResponseField>
+
+<ResponseField name="autoCapturePageviews" type="boolean" default="true">
+  Whether to automatically capture pageviews. Set to `false` for manual pageview tracking.
+</ResponseField>
+
+<ResponseField name="hashBasedRouting" type="boolean" default="false">
+  Enable for single-page applications using hash-based routing (e.g., `#/page`). Read more in the [hash-based routing docs](https://plausible.io/docs/hash-based-routing).
+</ResponseField>
+
+<ResponseField name="outboundLinks" type="boolean" default="false">
+  Automatically track clicks on outbound links.
+</ResponseField>
+
+<ResponseField name="fileDownloads" type="boolean | object" default="false">
+  Track file downloads. Can be `true` or an object with custom file extensions:
+  
+  ```javascript
+  fileDownloads: { fileExtensions: ['pdf', 'zip', 'csv'] }
+  ```
+</ResponseField>
+
+<ResponseField name="formSubmissions" type="boolean" default="false">
+  Automatically track form submissions.
+</ResponseField>
+
+<ResponseField name="captureOnLocalhost" type="boolean" default="false">
+  Enable event capture on localhost for testing.
+</ResponseField>
+
+<ResponseField name="logging" type="boolean" default="true">
+  Log warnings when events are ignored.
+</ResponseField>
+
+<ResponseField name="bindToWindow" type="boolean" default="true">
+  Binds `track` function to `window.plausible` for verification and debugging.
+</ResponseField>
+
+## Advanced Usage
+
+### Manual Initialization
+
+For advanced control, you can manually initialize the tracker with custom settings:
+
+```html
+<script>
+window.plausible = window.plausible || function() {
+  (plausible.q = plausible.q || []).push(arguments)
+}
+plausible.init = plausible.init || function(overrides) {
+  plausible.o = overrides || {}
+}
+
+plausible.init({
+  // Custom configuration
+})
+</script>
+<script defer src="https://plausible.io/js/script.js"></script>
+```
+
+### Proxying the Tracker
+
+To avoid ad-blockers, proxy the Plausible script through your own domain:
+
+```html
+<script defer data-domain="yourdomain.com" 
+  data-api="https://analytics.yourdomain.com/api/event" 
+  src="https://analytics.yourdomain.com/js/script.js"></script>
+```
+
+See the [proxy documentation](https://plausible.io/docs/proxy/introduction) for setup instructions.
+
+### Excluding Pages
+
+Exclude specific pages from tracking using wildcard patterns:
+
+```html
+<script defer data-domain="yourdomain.com" 
+  data-exclude="/admin/**,/dashboard/**" 
+  src="https://plausible.io/js/script.js"></script>
+```
+
+Supported wildcard patterns:
+- `*` - matches any characters except forward slashes
+- `**` - matches any characters including forward slashes
+
+## Verification
+
+After installing the tracker, verify it's working correctly:
+
+<Steps>
+  <Step title="Check Browser Console">
+    Open your browser's developer console and look for any Plausible-related warnings or errors.
+  </Step>
+  
+  <Step title="Verify window.plausible">
+    Type `window.plausible` in the console. If the tracker is loaded, you should see a function.
+  </Step>
+  
+  <Step title="Check Network Tab">
+    Navigate your site and check the Network tab for requests to `/api/event` with status code 202.
+  </Step>
+  
+  <Step title="View Real-time Dashboard">
+    Visit your Plausible dashboard and check the real-time visitor count.
+  </Step>
+</Steps>
+
+## Opt-out
+
+Users can opt out of tracking by setting a localStorage flag:
+
+```javascript
+localStorage.setItem('plausible_ignore', 'true')
+```
+
+The tracker will not send events if `localStorage.plausible_ignore` is set to `"true"`.
+
+More information: [Excluding with localStorage](https://plausible.io/docs/excluding-localstorage)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Events" icon="chart-line" href="/integration/custom-events">
+    Track custom goals and user interactions
+  </Card>
+  <Card title="Custom Properties" icon="tags" href="/integration/custom-properties">
+    Add metadata to your events
+  </Card>
+  <Card title="Events API" icon="code" href="/integration/events-api">
+    Server-side event tracking
+  </Card>
+  <Card title="Framework Guides" icon="tools" href="/integration/frameworks">
+    Integration guides for popular frameworks
+  </Card>
+</CardGroup>

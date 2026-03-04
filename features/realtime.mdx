@@ -1,0 +1,357 @@
+---
+title: Real-time Analytics
+description: Monitor current visitors on your website with live traffic data updating every second.
+---
+
+Plausible's real-time analytics give you instant visibility into current activity on your website. See who's on your site right now, what they're viewing, and where they're coming from—all updating live.
+
+## Real-time Dashboard
+
+The real-time view shows you what's happening on your site at this very moment:
+
+<CardGroup cols={2}>
+  <Card title="Current Visitors" icon="users">
+    Number of people on your site right now (last 5 minutes)
+  </Card>
+  <Card title="Active Pages" icon="file">
+    Pages being viewed in real-time
+  </Card>
+  <Card title="Live Sources" icon="arrow-right-to-bracket">
+    Where current visitors are coming from
+  </Card>
+  <Card title="Current Locations" icon="location-dot">
+    Geographic distribution of active visitors
+  </Card>
+</CardGroup>
+
+## Current Visitors Metric
+
+The "Current Visitors" counter shows unique visitors active in the **last 5 minutes**:
+
+### How It Works
+
+<Steps>
+  <Step title="Time Window">
+    Looks back 5 minutes from the current moment:
+    ```
+    Current Time: 14:30:00
+    Window: 14:25:00 to 14:30:00
+    ```
+  </Step>
+  
+  <Step title="Unique Identification">
+    Counts unique visitors using the same privacy-friendly hashing method as regular analytics:
+    - IP address + User Agent + Domain
+    - Hashed for anonymity
+    - No cookies or persistent identifiers
+  </Step>
+  
+  <Step title="Live Updates">
+    The counter refreshes automatically:
+    - Updates every few seconds
+    - Smooth number transitions
+    - Real-time accuracy
+  </Step>
+</Steps>
+
+<Info>
+The 5-minute window ensures you see genuinely active visitors while filtering out those who may have left your site.
+</Info>
+
+## Real-time Data Points
+
+### Pages Being Viewed
+
+See exactly which pages are active right now:
+
+- Page URL
+- Number of current viewers
+- Ranked by current activity
+- Live updates as visitors navigate
+
+### Traffic Sources
+
+Understand where your real-time traffic comes from:
+
+- **Direct** - Visitors typing your URL or using bookmarks
+- **Search** - Incoming from search engines
+- **Referrals** - Traffic from other websites
+- **Social** - Visitors from social media platforms
+- **Campaigns** - UTM-tagged marketing campaigns
+
+### Geographic Distribution
+
+See where in the world your current visitors are located:
+
+- Country breakdown
+- City information
+- Updated as new visitors arrive
+
+### Device Information
+
+Real-time device and browser data:
+
+- Desktop vs Mobile vs Tablet
+- Browser types
+- Operating systems
+
+## Use Cases
+
+### Content Publishing
+
+**Monitor new post performance:**
+
+```
+Publish blog post at 2:00 PM
+↓
+Check real-time dashboard
+↓  
+See immediate traffic spike
+↓
+Observe which sections readers visit
+```
+
+### Marketing Campaigns
+
+**Track campaign launches:**
+
+- Send email newsletter
+- Watch real-time traffic increase
+- See which links get clicked
+- Monitor conversion goals in real-time
+
+### Live Events
+
+**During webinars or product launches:**
+
+- Monitor attendance via website traffic
+- Track registration page activity
+- See geographic distribution of interest
+- Observe navigation patterns
+
+### Website Changes
+
+**After deploying updates:**
+
+- Verify traffic continues normally
+- Check that new pages load
+- Monitor for unusual patterns
+- Spot issues immediately
+
+## Accessing Real-time Data
+
+Multiple ways to view real-time analytics:
+
+### Dashboard View
+
+1. **Top Bar Indicator**
+   - Current visitors displayed prominently
+   - Always visible regardless of date range
+   - Click to see detailed breakdown
+
+2. **Real-time Panel**
+   - Dedicated section for live data
+   - Detailed breakdowns
+   - Refreshes automatically
+
+### Date Range Selection
+
+Select "Real-time" from the date picker:
+- Filters entire dashboard to last 30 minutes
+- All metrics show only current activity
+- Continuous updates
+
+<Accordion title="Real-time vs Last 30 Minutes">
+While the "Current Visitors" counter shows the last 5 minutes, selecting "Real-time" as a date range displays the last 30 minutes of data for more context while still updating live.
+</Accordion>
+
+## Performance Considerations
+
+### Update Frequency
+
+Real-time data updates:
+- **Current Visitors**: Every 5-10 seconds
+- **Page Views**: Every 10-15 seconds  
+- **Other Metrics**: Every 15-30 seconds
+
+### Database Queries
+
+Real-time queries are optimized for speed:
+
+```elixir
+# Source: lib/plausible/stats/current_visitors.ex
+- Queries last 5 minutes of data only
+- Filters out engagement events
+- Counts unique user IDs efficiently
+- Returns results in milliseconds
+```
+
+<Info>
+Even on high-traffic sites, real-time queries are lightning-fast thanks to ClickHouse's columnar database design.
+</Info>
+
+## Privacy and Real-time Data
+
+Real-time analytics maintain Plausible's privacy standards:
+
+- **No Individual Tracking**: You see aggregate counts, not individual visitors
+- **Anonymous Data**: No personally identifiable information
+- **No Session Recording**: Just statistics, no behavior recording
+- **Same Privacy Model**: Uses identical hashing method as historical data
+
+<Warning>
+Real-time data shows you patterns and trends, not individual user actions. You cannot see what a specific person is doing on your site.
+</Warning>
+
+## Integration with Other Features
+
+### Goals in Real-time
+
+Track goal completions as they happen:
+
+- See conversions as they occur
+- Monitor campaign performance live
+- Track real-time revenue (Business plan)
+- Verify goal triggers are working
+
+### Filters and Real-time
+
+Apply filters to real-time data:
+
+- Filter by traffic source
+- Focus on specific pages
+- Geographic filtering
+- Device type filtering
+
+### Segments and Real-time
+
+Apply saved segments to real-time view:
+
+- Monitor specific audience segments
+- Track segment behavior live
+- Compare segment activity
+
+## Limitations
+
+Real-time analytics has some constraints:
+
+### Time Resolution
+
+- Minimum window is 5 minutes for current visitors
+- Cannot view second-by-second data
+- Some aggregation inherent in the system
+
+### Data Completeness
+
+- Very recent events may take a few seconds to appear
+- High-traffic sites may see slight delays
+- Not intended for mission-critical real-time applications
+
+### Historical Comparison
+
+- Real-time view focuses on now
+- Historical trends shown separately
+- Comparison mode not available for real-time
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Current visitors shows 0">
+    - Verify your site has recent traffic
+    - Check that tracking script is installed correctly
+    - Ensure you're not blocking analytics (ad blocker, privacy mode)
+    - Wait 5 minutes after first pageview
+  </Accordion>
+  
+  <Accordion title="Count seems low">
+    - Remember it shows last 5 minutes only
+    - Visitors must be actively browsing (not idle)
+    - Check for script installation issues
+    - Verify no filters are applied
+  </Accordion>
+  
+  <Accordion title="Real-time not updating">
+    - Refresh your browser
+    - Check internet connection
+    - Verify no browser extensions blocking updates
+    - Try a different browser
+  </Accordion>
+  
+  <Accordion title="Events delayed">
+    - Small delays (5-10 seconds) are normal
+    - High traffic can cause slight buffering
+    - Network latency affects update speed
+    - Database load during peak times
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use for Validation" icon="check">
+    Verify that campaigns, events, and goals are triggering correctly.
+  </Card>
+  <Card title="Monitor Launches" icon="rocket">
+    Watch real-time during product launches or major announcements.
+  </Card>
+  <Card title="Spot Issues Early" icon="triangle-exclamation">
+    Catch problems immediately after deploying changes.
+  </Card>
+  <Card title="Understand Patterns" icon="chart-line">
+    Learn when your audience is most active.
+  </Card>
+</CardGroup>
+
+## Technical Details
+
+### Query Implementation
+
+The current visitors query:
+
+```sql
+-- Simplified view of the real-time query
+SELECT uniq(user_id) as current_visitors
+FROM events_v2
+WHERE site_id = ?
+  AND timestamp >= now() - INTERVAL 5 MINUTE
+  AND name != 'engagement'
+```
+
+### Event Filtering
+
+Real-time excludes certain events:
+- Engagement events (used for time on page calculation)
+- System events
+- Non-user-generated events
+
+### Caching Strategy
+
+Real-time data uses minimal caching:
+- Most queries hit the database directly
+- Brief caching (5-10 seconds) to prevent overload
+- Balance between freshness and performance
+
+## API Access
+
+Access real-time data programmatically:
+
+```bash
+GET /api/v1/stats/realtime/visitors
+```
+
+Use cases:
+- Custom dashboards
+- Alert systems
+- Integration with other tools
+- Automated monitoring
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Dashboard Overview" icon="chart-line" href="/features/dashboard">
+    Explore the full analytics dashboard
+  </Card>
+  <Card title="Goals Setup" icon="bullseye" href="/features/goals-conversions">
+    Track real-time conversions
+  </Card>
+</CardGroup>

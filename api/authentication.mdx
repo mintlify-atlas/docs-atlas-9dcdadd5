@@ -1,0 +1,422 @@
+---
+title: 'API Authentication'
+description: 'Learn how to authenticate your Plausible Analytics API requests using API keys'
+---
+
+## Overview
+
+Plausible uses API key-based authentication. All API requests must include a valid API key as a Bearer token in the `Authorization` header.
+
+## Creating an API Key
+
+<Steps>
+  <Step title="Navigate to API Keys settings">
+    Go to your [API Keys settings page](https://plausible.io/settings/api-keys) in your Plausible account.
+  </Step>
+
+  <Step title="Create a new key">
+    Click "+ New API Key" and provide:
+    - **Name**: A descriptive name for the key (e.g., "Production Analytics Dashboard")
+    - **Team**: Select which team this key should be scoped to
+  </Step>
+
+  <Step title="Choose scopes">
+    The scope is automatically determined based on the key type:
+    - Stats API keys get `stats:read:*` scope
+    - Sites API keys get `sites:provision:*` scope (Enterprise only)
+  </Step>
+
+  <Step title="Save and copy the key">
+    After creating the key, copy it immediately. For security reasons, you won't be able to see the full key again.
+
+    <Warning>
+      Store your API key securely! It provides access to your analytics data and should be treated like a password.
+    </Warning>
+  </Step>
+</Steps>
+
+## Authentication Method
+
+Include your API key in the `Authorization` header as a Bearer token:
+
+```bash
+Authorization: Bearer YOUR_API_KEY
+```
+
+### Example Request
+
+<CodeGroup>
+```bash cURL
+curl https://plausible.io/api/v1/stats/aggregate \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -G \
+  -d 'site_id=example.com' \
+  -d 'period=30d'
+```
+
+```javascript JavaScript (Fetch)
+fetch('https://plausible.io/api/v1/stats/aggregate?site_id=example.com&period=30d', {
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY'
+  }
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+```python Python (Requests)
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+params = {
+    'site_id': 'example.com',
+    'period': '30d'
+}
+
+response = requests.get(
+    'https://plausible.io/api/v1/stats/aggregate',
+    headers=headers,
+    params=params
+)
+
+data = response.json()
+print(data)
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+
+uri = URI('https://plausible.io/api/v1/stats/aggregate')
+uri.query = URI.encode_www_form({
+  site_id: 'example.com',
+  period: '30d'
+})
+
+request = Net::HTTP::Get.new(uri)
+request['Authorization'] = 'Bearer YOUR_API_KEY'
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+  http.request(request)
+end
+
+data = JSON.parse(response.body)
+puts data
+```
+
+```go Go
+package main
+
+import (
+    "fmt"
+    "io"
+    "net/http"
+)
+
+func main() {
+    url := "https://plausible.io/api/v1/stats/aggregate?site_id=example.com&period=30d"
+    
+    req, _ := http.NewRequest("GET", url, nil)
+    req.Header.Add("Authorization", "Bearer YOUR_API_KEY")
+    
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        panic(err)
+    }
+    defer resp.Body.Close()
+    
+    body, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(body))
+}
+```
+</CodeGroup>
+
+## API Key Types
+
+### Team-Scoped Keys
+
+Modern API keys are scoped to a specific team:
+
+<Card>
+  **Characteristics:**
+  - Bound to a single team
+  - Only works with sites owned by that team
+  - User must be a team member (guests cannot use team keys)
+  - Subject to team-based rate limits
+  - Generated with a 6-character prefix for identification
+</Card>
+
+**Key Format:** 64-character URL-safe string
+
+**Storage:** Keys are hashed using SHA-256 before storage. Only the first 6 characters (prefix) are stored in plain text for identification.
+
+### Legacy Keys (Deprecated)
+
+Older API keys created before team-scoping:
+
+<Card>
+  **Characteristics:**
+  - Work across all teams the user belongs to
+  - Can access sites where user is a guest
+  - Subject to user-based rate limits
+  - Cannot be created through the UI anymore
+</Card>
+
+<Warning>
+  Legacy keys are maintained for backwards compatibility only. New integrations should use team-scoped keys.
+</Warning>
+
+## API Scopes and Permissions
+
+### stats:read:*
+
+**Default scope** - Allows reading analytics data
+
+<Accordion title="Permissions">
+- Query aggregate statistics
+- Access breakdown reports
+- Retrieve timeseries data
+- View realtime visitor counts
+- Read site metadata
+</Accordion>
+
+**Available to:** All API keys (implicit scope)
+
+### sites:read:*
+
+**Read-only access** to site configurations
+
+<Accordion title="Permissions">
+- List all sites
+- Get site details
+- List goals
+- List custom properties
+- View site guests
+- List teams
+</Accordion>
+
+**Available to:** All API keys (implicit scope)
+
+### sites:provision:*
+
+**Full provisioning access** - Requires Enterprise plan
+
+<Accordion title="Permissions">
+- All `sites:read:*` permissions
+- Create new sites
+- Update site settings
+- Delete sites
+- Create and delete goals
+- Manage custom properties
+- Create shared links
+- Invite and remove guests
+</Accordion>
+
+**Available to:** Sites API keys on Enterprise plans only
+
+<Note>
+  The scopes use wildcard matching. For example, if an API key has `sites:*` scope, it matches both `sites:read:*` and `sites:provision:*`.
+</Note>
+
+## Authentication Errors
+
+The API returns specific error messages for authentication failures:
+
+### Missing API Key
+
+```json
+{
+  "error": "Missing API key. Please use a valid Plausible API key as a Bearer Token."
+}
+```
+
+**HTTP Status:** `401 Unauthorized`
+
+**Cause:** No `Authorization` header provided or header format is incorrect
+
+**Solution:** Include the header as `Authorization: Bearer YOUR_API_KEY`
+
+### Invalid API Key
+
+```json
+{
+  "error": "Invalid API key. Please make sure you're using a valid API key with access to the resource you've requested."
+}
+```
+
+**HTTP Status:** `401 Unauthorized`
+
+**Causes:**
+- API key doesn't exist
+- API key has been deleted
+- Key is valid but doesn't have access to the requested site
+- Team-scoped key used for a site in a different team
+
+### Invalid API Key with Site Access
+
+For Stats API requests:
+
+```json
+{
+  "error": "Invalid API key or site ID. Please make sure you're using a valid API key with access to the site you've requested."
+}
+```
+
+**HTTP Status:** `401 Unauthorized`
+
+**Causes:**
+- Site ID doesn't exist
+- API key doesn't have permission to access the site
+- User is not a member of the site's team
+
+### Insufficient Scope
+
+```json
+{
+  "error": "Invalid API key. Please make sure you're using a valid API key with access to the resource you've requested."
+}
+```
+
+**HTTP Status:** `401 Unauthorized`
+
+**Cause:** API key doesn't have the required scope for the endpoint
+
+**Solution:** Create a new API key with the appropriate scope or use a different key
+
+## Rate Limiting
+
+API keys are subject to rate limits to ensure fair usage:
+
+### Hourly Limit
+
+<CodeGroup>
+```text Team-Scoped Keys
+Default: 600 requests/hour per team
+(Configurable per team in Enterprise plans)
+```
+
+```text Legacy Keys
+Default: 1,000,000 requests/hour per user
+(Effectively unlimited for most use cases)
+```
+</CodeGroup>
+
+### Burst Limit
+
+All keys are subject to a burst limit to prevent abuse:
+
+```text
+Requests: Configurable (default varies)
+Period: Configurable in seconds
+```
+
+**Rate Limit Headers:** Currently not included in responses
+
+### Rate Limit Errors
+
+#### Hourly Limit Exceeded
+
+```json
+{
+  "error": "Too many API requests. The limit is 600 per hour. Please contact us to request more capacity."
+}
+```
+
+**HTTP Status:** `429 Too Many Requests`
+
+#### Burst Limit Exceeded
+
+```json
+{
+  "error": "Too many API requests in a short period of time. The limit is 100 per 60 seconds. Please throttle your requests."
+}
+```
+
+**HTTP Status:** `429 Too Many Requests`
+
+<Note>
+  Rate limits are enforced per team (for team-scoped keys) or per user (for legacy keys), not per API key. Multiple keys for the same team share the same rate limit.
+</Note>
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Store keys securely" icon="lock">
+    - Never commit API keys to version control
+    - Use environment variables or secret management services
+    - Rotate keys periodically
+    - Delete unused keys immediately
+  </Accordion>
+
+  <Accordion title="Use team-scoped keys" icon="users">
+    - Create separate keys for each team
+    - Limit blast radius if a key is compromised
+    - Easier to track usage and manage access
+  </Accordion>
+
+  <Accordion title="Principle of least privilege" icon="shield">
+    - Only request the scopes you need
+    - Use `stats:read:*` for read-only analytics access
+    - Only use `sites:provision:*` when you need write access
+  </Accordion>
+
+  <Accordion title="Monitor API usage" icon="chart-line">
+    - Track which keys are being used
+    - Watch for unusual patterns
+    - Delete keys that haven't been used in 90+ days
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="API key works in one environment but not another">
+    **Problem:** Key works locally but fails in production
+
+    **Common causes:**
+    - Whitespace or newlines in the environment variable
+    - Key was copied incorrectly (missing characters)
+    - Using a different key than intended
+
+    **Solution:** Verify the exact key value being used and ensure proper trimming of whitespace.
+  </Accordion>
+
+  <Accordion title="Getting 401 errors despite valid key">
+    **Problem:** Authentication fails even with correct API key
+
+    **Common causes:**
+    - Team-scoped key used for site in different team
+    - User is a guest on the site (team keys require membership)
+    - Site was transferred to another team
+
+    **Solution:** Check that the key's team matches the site's team. Verify team membership in settings.
+  </Accordion>
+
+  <Accordion title="Site locked or upgrade required errors">
+    **Problem:** Getting 402 Payment Required errors
+
+    **Common causes:**
+    - Team subscription has lapsed
+    - Required feature not available on current plan
+    - Attempting to use Sites API without Enterprise plan
+
+    **Solution:** Check team billing status and plan features. Upgrade if necessary.
+  </Accordion>
+</AccordionGroup>
+
+## Implementation from Source
+
+API key authentication is implemented in:
+
+- Key structure: `lib/plausible/auth/api_key.ex:44-58`
+- Authorization logic: `lib/plausible_web/plugs/authorize_public_api.ex:50-65`
+- Scope verification: `lib/plausible_web/plugs/authorize_public_api.ex:156-173`
+- Rate limiting: `lib/plausible_web/plugs/authorize_public_api.ex:187-214`
+
+<Note>
+  For self-hosted instances, rate limits and some authentication behaviors can be configured via environment variables.
+</Note>
